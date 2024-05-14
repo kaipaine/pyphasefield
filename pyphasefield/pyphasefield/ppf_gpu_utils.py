@@ -405,7 +405,7 @@ def update_temperature_field(sim):
             update_thermal_gradient_3D_kernel[sim._gpu_blocks_per_grid_3D, sim._gpu_threads_per_block_3D](sim._temperature_gpu_device, 
                                                                                     sim._dTdt,
                                                                                     sim.get_time_step_length())
-    elif(sim._temperature_type == "XDMF_FILE"):
+    elif(sim._temperature_type == "THERMAL_HISTORY_FILE"):
         current_time = sim.get_time_step_length()*sim.get_time_step_counter()
         if(pathlib.Path(sim._temperature_path).suffix == ".xdmf"):
             while(current_time > sim._t_file_bounds[1]):

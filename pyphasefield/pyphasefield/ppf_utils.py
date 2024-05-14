@@ -21,6 +21,7 @@ seed_mask_p = None
 seed_mask_q = None
 r_p = None
 r_q = None
+seed_dim = None
 
 #units dict for easy lookup
 units_dict = {
@@ -67,7 +68,8 @@ def successfully_imported_numba():
     return True
 
 def make_seed_masks(r, q_extra, ndims):
-    global seed_mask_p, seed_mask_q, r_p, r_q
+    global seed_mask_p, seed_mask_q, r_p, r_q, seed_dim
+    seed_dim = ndims
     r_p = r
     r_q = r+q_extra
     p_slices = []
@@ -142,11 +144,11 @@ def make_seed(sim, p=0, q=[1, 2, 3, 4], c=[5], composition=None, x=None, y=None,
     This function will account for parallelism (global vs. local coordinates) automatically. 
     
     """
-    global seed_mask_p, seed_mask_q, r_p, r_q
+    global seed_mask_p, seed_mask_q, r_p, r_q, seed_dim
     phi = sim.fields[p]
     shape = phi.data.shape
     gdims = sim._global_dimensions
-    if not((seed_radius == r_p) and ((seed_radius+q_extra) == r_q)):
+    if not((seed_radius == r_p) and ((seed_radius+q_extra) == r_q) and (seed_dim == len(shape))):
         make_seed_masks(seed_radius, q_extra, len(shape))
     no_q = False
     q_2d = False
