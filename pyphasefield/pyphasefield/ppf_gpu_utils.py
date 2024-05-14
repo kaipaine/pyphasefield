@@ -7,6 +7,7 @@ import math
 from numba.cuda.random import create_xoroshiro128p_states, xoroshiro128p_uniform_float32
 import meshio as mio
 from . import ppf_utils
+import pathlib
 import h5py
                 
 """format is:
@@ -272,7 +273,7 @@ def update_thermal_file_3D_kernel(T, T0, T1, start, end, current):
     # assuming x and y inputs are same length
     for i in range(startz+1, T.shape[0]-1, stridez):
         for j in range(starty+1, T.shape[1]-1, stridey):
-            for j in range(startx+1, T.shape[2]-1, stridex):
+            for k in range(startx+1, T.shape[2]-1, stridex):
                 T[i][j][k] = T0[i-1][j-1][k-1]*ratio_T0 + T1[i-1][j-1][k-1]*ratio_T1
                 
 def create_GPU_devices(sim):
@@ -280,7 +281,7 @@ def create_GPU_devices(sim):
     if not (sim.temperature is None):
         sim._temperature_gpu_device = cuda.device_array(sim.temperature.data.shape, dtype=sim._gpu_dtype)
         temperature_shape = sim._temperature_boundary_field.data.shape
-        if(sim._temperature_type == "XDMF_FILE"):
+        if(sim._temperature_type == "THERMAL_HISTORY_FILE"):
             sim._t_file_gpu_devices[0] = cuda.device_array(sim._t_file_arrays[0].shape, dtype=sim._gpu_dtype)
             sim._t_file_gpu_devices[1] = cuda.device_array(sim._t_file_arrays[1].shape, dtype=sim._gpu_dtype)
     field_shape = list(sim.fields[0].data.shape)
@@ -310,9 +311,9 @@ def send_fields_to_GPU(sim):
     #03/28/2023 - tried to ensure device arrays are reused, avoid memory leaks
     if not (sim.temperature is None):
         sim._temperature_gpu_device.copy_to_device(sim.temperature.data)
-        if(sim._temperature_type == "XDMF_FILE"):
+        if(sim._temperature_type == "THERMAL_HISTORY_FILE"):
             sim._t_file_gpu_devices[0].copy_to_device(sim._t_file_arrays[0])
-            sim._t_file_gpu_devices[1].copy_.to_device(sim._t_file_arrays[1])
+            sim._t_file_gpu_devices[1].copy_to_device(sim._t_file_arrays[1])
     for i in range(len(sim.fields)):
         sim._fields_gpu_device[i].copy_to_device(sim.fields[i].data)
     #send slices of full boundary condition array to gpu

@@ -409,7 +409,6 @@ class Simulation:
     def _build_interpolated_t_array(self, f, index):
         if not(self._initialized_t_file_helper_arrays):
             self._build_t_file_helper_arrays() #creates self._t_interpolation_points just once
-            print("test")
             self._initialized_t_file_helper_arrays = True
         dims_F = f["gridsize_F"][:]
         array = f["data"][:][index]
@@ -431,7 +430,6 @@ class Simulation:
         for i in range(len(self.dimensions)):
             aranges.append((np.arange(self.dimensions[i], dtype=float)+self._dim_offset[i]+self._t_file_offset[i])*self.dx)
         grid = np.meshgrid(*aranges, indexing='ij')
-        print(len(grid))
         if(len(grid) == 2):
             self._t_interpolation_points = np.array([grid[0].ravel(), grid[1].ravel()]).T
         elif(len(grid) == 3):
