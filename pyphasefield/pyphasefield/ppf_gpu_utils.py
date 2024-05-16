@@ -247,7 +247,7 @@ def update_thermal_file_1D_kernel(T, T0, T1, start, end, current):
 
     # assuming x and y inputs are same length
     for i in range(startx+1, T.shape[0]-1, stridex):
-        T[i] = T0[i-1]*ratio_T0 + T1[i-1]*ratio_T1
+        T[i] = T0[i]*ratio_T0 + T1[i]*ratio_T1
 
 @cuda.jit
 def update_thermal_file_2D_kernel(T, T0, T1, start, end, current):
@@ -260,7 +260,7 @@ def update_thermal_file_2D_kernel(T, T0, T1, start, end, current):
     # assuming x and y inputs are same length
     for i in range(starty+1, T.shape[0]-1, stridey):
         for j in range(startx+1, T.shape[1]-1, stridex):
-            T[i][j] = T0[i-1][j-1]*ratio_T0 + T1[i-1][j-1]*ratio_T1
+            T[i][j] = T0[i][j]*ratio_T0 + T1[i][j]*ratio_T1
             
 @cuda.jit
 def update_thermal_file_3D_kernel(T, T0, T1, start, end, current):
@@ -274,7 +274,7 @@ def update_thermal_file_3D_kernel(T, T0, T1, start, end, current):
     for i in range(startz+1, T.shape[0]-1, stridez):
         for j in range(starty+1, T.shape[1]-1, stridey):
             for k in range(startx+1, T.shape[2]-1, stridex):
-                T[i][j][k] = T0[i-1][j-1][k-1]*ratio_T0 + T1[i-1][j-1][k-1]*ratio_T1
+                T[i][j][k] = T0[i][j][k]*ratio_T0 + T1[i][j][k]*ratio_T1
                 
 def create_GPU_devices(sim):
     #this should be run only once per simulation, to avoid memory leaks!
@@ -424,7 +424,7 @@ def update_temperature_field(sim):
                 times = f["times"][:]
                 #assume the first time slice is less than the current time, if not, interpolate before first slice
                 while(times[sim._t_file_index] < current_time):
-                    if(sim.t_file_index == len(times)-1):
+                    if(sim._t_file_index == len(times)-1):
                         break #interpolate past last time slice if necessary
                     sim._t_file_index += 1
                     sim._t_file_bounds[0] = sim._t_file_bounds[1]

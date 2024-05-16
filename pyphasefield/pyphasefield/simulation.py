@@ -402,8 +402,9 @@ class Simulation:
                     self._t_file_arrays[1] = self._build_interpolated_t_array(f, self._t_file_index)
             else:
                 raise ValueError("Extension must be .hdf5 or .xdmf")
-            array = self._t_file_arrays[0]*(self._t_file_bounds[1] - current_time)/(self._t_file_bounds[1]-self._t_file_bounds[0]) + self._t_file_arrays[1]*(current_time-self._t_file_bounds[0])/(self._t_file_bounds[1]-self._t_file_bounds[0])
+            array = np.zeros(self.dimensions)
             t_field = Field(data=array, simulation=self, colormap="jet", name="Temperature ("+self._temperature_units+")")
+            t_field.data += self._t_file_arrays[0]*(self._t_file_bounds[1] - current_time)/(self._t_file_bounds[1]-self._t_file_bounds[0]) + self._t_file_arrays[1]*(current_time-self._t_file_bounds[0])/(self._t_file_bounds[1]-self._t_file_bounds[0])
             self.temperature = t_field
                 
     def _build_interpolated_t_array(self, f, index):
@@ -421,14 +422,39 @@ class Simulation:
             y = (np.arange(array.shape[1], dtype=float)*dims_F[1])
             z = (np.arange(array.shape[0], dtype=float)*dims_F[2])
             interp = RegularGridInterpolator([z,y,x], array, bounds_error=False, fill_value=None)
-        interp_array = interp(self._t_interpolation_points, method="linear").reshape(*self.dimensions)
+        shape = self.dimensions.copy()
+        for i in range(len(shape)):
+            lb = 1 #left_boundary
+            rb = 1 #right_boundary
+            if(self._parallel):
+                if(self._neighbors[i][0] == self._MPI_rank):
+                    lb = self._ghost_rows #TODO: change when creating special case for a GPU being its own neighbor
+                elif(self._ngbc[i][0] == 0):
+                    lb = self._ghost_rows
+                if(self._neighbors[i][1] == self._MPI_rank):
+                    rb = self._ghost_rows #TODO: change when creating special case for a GPU being its own neighbor
+                elif(self._ngbc[i][1] == 0):
+                    rb = self._ghost_rows
+            shape[i] += (lb+rb)
+        interp_array = interp(self._t_interpolation_points, method="linear").reshape(*shape)
         return interp_array
             
         
     def _build_t_file_helper_arrays(self):
         aranges = []
         for i in range(len(self.dimensions)):
-            aranges.append((np.arange(self.dimensions[i], dtype=float)+self._dim_offset[i]+self._t_file_offset[i])*self.dx)
+            lb = -1 #left_boundary
+            rb = 1 #right_boundary
+            if(self._parallel):
+                if(self._neighbors[i][0] == self._MPI_rank):
+                    lb = -self._ghost_rows #TODO: change when creating special case for a GPU being its own neighbor
+                elif(self._ngbc[i][0] == 0):
+                    lb = -self._ghost_rows
+                if(self._neighbors[i][1] == self._MPI_rank):
+                    rb = self._ghost_rows #TODO: change when creating special case for a GPU being its own neighbor
+                elif(self._ngbc[i][1] == 0):
+                    rb = self._ghost_rows
+            aranges.append((np.arange(lb, self.dimensions[i]+rb, dtype=float)+self._dim_offset[i]+self._t_file_offset[i])*self.dx)
         grid = np.meshgrid(*aranges, indexing='ij')
         if(len(grid) == 2):
             self._t_interpolation_points = np.array([grid[0].ravel(), grid[1].ravel()]).T
