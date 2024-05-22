@@ -1048,7 +1048,7 @@ class Simulation:
                 self.dimensions = list(f["fields"].shape[1:])
                 self._global_dimensions = self.dimensions.copy()
                 #reinitialize parallelism to create subarray dimensions (*SHOULD* modify self.dimensions to reflect this)
-                self.initialize_parallelism()
+                self._initialize_parallelism()
                 _slice = list(self._make_global_slice(self.dimensions, self._dim_offset))
                 _slice.insert(0,0)
                 for i, name in enumerate(_names):
