@@ -951,7 +951,7 @@ class Simulation:
                         self._t_file_bounds[1] = times[self._t_file_index]
                         self._t_file_arrays[0] = self._t_file_arrays[1]
                         self._t_file_arrays[1] = self._build_interpolated_t_array(f, self._t_file_index)
-            array = self.temperature.get_cells()
+            array = self.temperature.data
             array[:] = 0
             array += self._t_file_arrays[0]*(self._t_file_bounds[1] - current_time)/(self._t_file_bounds[1]-self._t_file_bounds[0]) + self._t_file_arrays[1]*(current_time-self._t_file_bounds[0])/(self._t_file_bounds[1]-self._t_file_bounds[0])
             return
