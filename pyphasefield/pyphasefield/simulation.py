@@ -233,6 +233,7 @@ class Simulation:
         self._t_file_gpu_devices = [None, None]
         self._t_file_units = ["K", "m"]
         self._t_file_offset = [0, 0, 0] #number of cells to offset the origin of the sim, w.r.t. the thermal file
+        self._t_file_clamp = [None, None] #clamp the values of temperature when using thermal files to between these values
         self._initialized_t_file_helper_arrays = False
         
         #tdb related variables
@@ -437,7 +438,7 @@ class Simulation:
                     rb = self._ghost_rows
             shape[i] += (lb+rb)
         interp_array = interp(self._t_interpolation_points, method="linear").reshape(*shape)
-        return interp_array
+        return np.clip(interp_array, self._t_file_clamp[0], self._t_file_clamp[1])
             
         
     def _build_t_file_helper_arrays(self):
@@ -1385,6 +1386,11 @@ class Simulation:
         
     def set_t_file_offset(self, offset_list):
         self._t_file_offset = offset_list
+        
+    def set_t_file_min(self, t_min):
+        self._t_file_clamp[0] = t_min
+    def set_t_file_max(self, t_max):
+        self._t_file_clamp[1] = t_max
 
     def set_tdb_container(self, tdb_container):
         self._tdb_container = tdb_container
