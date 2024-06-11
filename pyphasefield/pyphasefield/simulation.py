@@ -438,7 +438,10 @@ class Simulation:
                     rb = self._ghost_rows
             shape[i] += (lb+rb)
         interp_array = interp(self._t_interpolation_points, method="linear").reshape(*shape)
-        return np.clip(interp_array, self._t_file_clamp[0], self._t_file_clamp[1])
+        if((self._t_file_clamp[0] is None) and (self._t_file_clamp[1] is None)):
+            return interp_array
+        else:
+            return np.clip(interp_array, self._t_file_clamp[0], self._t_file_clamp[1])
             
         
     def _build_t_file_helper_arrays(self):
