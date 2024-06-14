@@ -48,8 +48,8 @@ for lambda_ in lambdas:
     sim.set_dt(dt)
     sim.set_boundary_conditions(['NEUMANN','NEUMANN','NEUMANN','NEUMANN'])
 
-    a1 = 0.6267
-    a2 = 0.8839
+    a1 = 0.8839
+    a2 = 0.6267
 
     data = {
         'w':1.,
