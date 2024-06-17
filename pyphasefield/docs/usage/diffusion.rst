@@ -9,7 +9,6 @@ The Code
 
 .. code-block:: python
 
-	#built for pyphasefield version 1.1.0, may not work on future versions!
 	import pyphasefield.Engines as engines
 
 	sim = engines.Diffusion(dimensions=[500, 500])
@@ -33,12 +32,13 @@ The Code
 	sim.initialize_engine()
 
 	#change array data here, for custom simulations
-	"""
-	sim.fields[0].data[:] = 1.
+	
+	#set the field values manually using numpy slicing
+	sim.fields[0].data[:] = 0.
 	length = sim.dimensions[0]
 	width = sim.dimensions[1]
-	sim.fields[0].data[length // 4:3 * length // 4, width // 4:3 * width // 4] = 0.
-	"""
+	sim.fields[0].data[length // 4:3 * length // 4, width // 4:3 * width // 4] = 1.
+	
 
 
 	#initial conditions

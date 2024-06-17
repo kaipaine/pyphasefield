@@ -1,4 +1,3 @@
-#built for pyphasefield version 1.1.0, may not work on future versions!
 from MyDiffusion import MyDiffusionClass
 
 sim = MyDiffusionClass(dimensions=[500, 500])

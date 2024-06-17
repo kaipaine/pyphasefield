@@ -88,8 +88,7 @@
 we will illustrate this process with an example script, using the built-in Diffusion pyphasefield engine.</p>
 <section id="the-code">
 <h2>The Code<a class="headerlink" href="#the-code" title="Link to this heading"></a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#built for pyphasefield version 1.1.0, may not work on future versions!</span>
-<span class="kn">import</span> <span class="nn">pyphasefield.Engines</span> <span class="k">as</span> <span class="nn">engines</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyphasefield.Engines</span> <span class="k">as</span> <span class="nn">engines</span>
 
 <span class="n">sim</span> <span class="o">=</span> <span class="n">engines</span><span class="o">.</span><span class="n">Diffusion</span><span class="p">(</span><span class="n">dimensions</span><span class="o">=</span><span class="p">[</span><span class="mi">500</span><span class="p">,</span> <span class="mi">500</span><span class="p">])</span>
 
@@ -112,12 +111,13 @@ we will illustrate this process with an example script, using the built-in Diffu
 <span class="n">sim</span><span class="o">.</span><span class="n">initialize_engine</span><span class="p">()</span>
 
 <span class="c1">#change array data here, for custom simulations</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">sim.fields[0].data[:] = 1.</span>
-<span class="sd">length = sim.dimensions[0]</span>
-<span class="sd">width = sim.dimensions[1]</span>
-<span class="sd">sim.fields[0].data[length // 4:3 * length // 4, width // 4:3 * width // 4] = 0.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1">#set the field values manually using numpy slicing</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.</span>
+<span class="n">length</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">width</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">length</span> <span class="o">//</span> <span class="mi">4</span><span class="p">:</span><span class="mi">3</span> <span class="o">*</span> <span class="n">length</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">width</span> <span class="o">//</span> <span class="mi">4</span><span class="p">:</span><span class="mi">3</span> <span class="o">*</span> <span class="n">width</span> <span class="o">//</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+
 
 
 <span class="c1">#initial conditions</span>
