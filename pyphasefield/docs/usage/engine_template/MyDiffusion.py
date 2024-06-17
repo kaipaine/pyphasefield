@@ -38,9 +38,9 @@ class MyDiffusionClass(Simulation):
         c[length // 4:3 * length // 4, width // 4:3 * width // 4] = 1
         self.add_field(c, "c")
 
-    def initialize_fields_and_imported_data(self):
-        super().initialize_fields_and_imported_data()
-        #initialization of fields/imported data goes below
+    def initialize_engine(self):
+        super().initialize_engine()
+        #final initialization of the engine goes below
         #runs *after* tdb, thermal, fields, and boundary conditions are loaded/initialized
 
     def just_before_simulating(self):

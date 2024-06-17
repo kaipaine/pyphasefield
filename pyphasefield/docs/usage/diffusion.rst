@@ -30,7 +30,7 @@ The Code
 	sim.set_user_data(data)
 
 	#initialize simulation arrays, all parameter changes should be BEFORE this point!
-	sim.initialize_fields_and_imported_data()
+	sim.initialize_engine()
 
 	#change array data here, for custom simulations
 	"""

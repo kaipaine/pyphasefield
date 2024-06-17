@@ -23,7 +23,7 @@ The Code
 
 	tdbc = ppf.TDBContainer("Ni-Cu_Ideal.tdb", ["FCC_A1", "LIQUID"], ["CU", "NI"])
 
-	sim = engines.Diffusion(dimensions=[200, 200])
+	sim = engines.Diffusion(dimensions=[200, 200, 200])
 
 	#initialize non-array parameters
 	sim.set_framework("CPU_SERIAL")
@@ -37,7 +37,11 @@ The Code
 	sim.set_temperature_dTdz(0.)
 	sim.set_temperature_dTdt(-3000000.)
 	sim.set_temperature_dTdt(0.)
-	sim.set_temperature_path("T.xdmf")
+	sim.set_temperature_path("T.hdf5")
+	sim.set_t_file_offset_cells([4000, 8000, 10000]) #this or below
+	sim.set_t_file_offset_units([0.00025, 0.00008, 0.00043]) #this or above
+	sim.set_t_file_min(1500.)
+	sim.set_t_file_max(2800.)
 	sim.set_temperature_units("K")
 	sim.set_tdb_container(tdbc)
 	sim.set_tdb_path("Ni-Cu_Ideal.tdb")
@@ -48,6 +52,7 @@ The Code
 	sim.set_autosave_save_images_flag(False)
 	sim.set_autosave_rate(40000)
 	sim.set_boundary_conditions("NEUMANN")
+	sim.set_ghost_rows(32)
 
 	data = {
 		
@@ -55,7 +60,7 @@ The Code
 	sim.set_user_data(data)
 
 	#initialize simulation arrays, all parameter changes should be BEFORE this point!
-	sim.initialize_fields_and_imported_data()
+	sim.initialize_engine()
 
 	#change array data here, for custom simulations
 
@@ -81,10 +86,10 @@ upwards of a minute to load all the information into pycalphad. The parameters a
 
 .. code-block:: python
 
-	sim = engines.Diffusion(dimensions=[200, 200])
+	sim = engines.Diffusion(dimensions=[200, 200, 200])
 
 This creates a Simulation object, sim (in this example, it is the subclass Diffusion). The required parameter, dimensions, is a list of 
-integer values dictating the dimensionality (number of values in the list) and size of the simulation box. 
+integer values dictating the dimensionality (number of values in the list) and size of the simulation box. Follows C-style array conventions (z, y, x ordering).
 
 .. code-block:: python
 
@@ -97,14 +102,15 @@ and "GPU_SERIAL", for code running on a single GPU (requires numba!)
 
 	sim.set_dx(1.)
 
-This sets the size of a single cell in the simulation. Pyphasefield uses a square regular grid, with the length of each edge of a cell equal to dx.
+This sets the size of a single cell in the simulation. Pyphasefield uses a square regular grid, with the length of each edge of a cell equal to dx. 
+Typically, this is in units of meters or centimeters (depends on the model!).
 	
 .. code-block:: python
 
 	sim.set_dt(0.1)
 
 This sets the length of a time step in the simulation. Some engines will set this value automatically, to prevent instability due to a large timestep 
-in an explicit scheme simulation.
+in an explicit scheme simulation. Typically, this is in units of seconds.
 	
 .. code-block:: python
 
@@ -123,17 +129,17 @@ contained within (numpy ndarray) may be accessed using sim.temperature.data. Pos
 * None: Used if a simulation does not use temperature, or if you wish to have temperature evolve using phase field equations (in which case, 
   temperature would just be another field in sim.fields)
 * "ISOTHERMAL": Used if the overall temperature does not change during a simulation. Only sim.set_temperature_initial_T() need be used
-* "LINEAR GRADIENT": Used if the simulation has a simple linear gradient in either space or time or both. sim.set_temperature_initial_T() will set the 
+* "LINEAR_GRADIENT": Used if the simulation has a simple linear gradient in either space or time or both. sim.set_temperature_initial_T() will set the 
   temperature of the cell [0, 0, 0, ...], while sim.set_temperature_dTdx(), sim.set_temperature_dTdy(), sim.set_temperature_dTdz() will set the thermal 
   gradient in the x, y, and z dimensions as necessary, while sim.set_temperature_dTdt() will set how all cells change in temperature over time.
-* "XDMF_FILE": Used if you wish to pull thermal data from a file (for example, if you generate the thermal field using a different simulation scheme, 
+* "THERMAL_HISTORY_FILE": Used if you wish to pull thermal data from a file (for example, if you generate the thermal field using a different simulation scheme, 
   like FEM!). Only sim.set_temperature_path() has to be used for this case.
 	
 .. code-block:: python
 
 	sim.set_temperature_initial_T(1584.)
 	
-Sets the temperature of the entire simulation (isothermal) or the initial temperature of the origin (linear gradient).
+Sets the temperature of the entire simulation (isothermal) or the initial temperature of the origin (linear gradient). Typically in units of K.
 	
 .. code-block:: python
 
@@ -141,22 +147,49 @@ Sets the temperature of the entire simulation (isothermal) or the initial temper
 	sim.set_temperature_dTdy(0.)
 	sim.set_temperature_dTdz(0.)
 
-Sets the thermal gradient along each dimension
+Sets the thermal gradient along each dimension. This is in units of temperature/length, based on units of dx (e.g. K/m or K/cm). 
 
 .. code-block:: python
 
 	sim.set_temperature_dTdt(-3000000.)
 	
 Sets the change in temperature over time, often called the cooling rate. Note that while cooling is more commonly used, dTdt must be negative 
-to result in cooling over time!
+to result in cooling over time! Typically in units of K/s.
 
 .. code-block:: python
 
-	sim.set_temperature_path("T.xdmf")
+	sim.set_temperature_path("T.hdf5")
 	
-Sets the relative path to an XDMF file, to be used to pull thermal data from. The current location of the script (or jupyter notebook) is the 
-current directory in this case.
+Sets the relative path to an HDF5 file, to be used to pull thermal data from. The current location of the script (or jupyter notebook) is the 
+current directory in this case. XDMF files might also work, but may not function properly with parallelism. We strongly recommend converting XDMF 
+files into HDF5 files for optimal compatibility.
 	
+.. code-block:: python
+
+	sim.set_t_file_offset_cells([4000, 8000, 10000])
+
+Sets the location in the thermal history file to use as an origin, in units of number of cells. 
+
+.. code-block:: python
+
+	sim.set_t_file_offset_units([0.00025, 0.00008, 0.00043])
+
+Sets the location in the thermal history file to use as an origin, in the same units as dx. This function requires that dx has already been set!
+
+.. code-block:: python
+
+	sim.set_t_file_min(1500.)
+    
+Clamps values of the thermal history file to be no smaller than this value. (Engines may not behave correctly with regions far below melting). 
+In the same units as the thermal history file, which typically should be K.
+
+.. code-block:: python
+
+	sim.set_t_file_max(1500.)
+    
+Clamps values of the thermal history file to be no larger than this value. (Engines may not behave correctly with regions far above melting either). 
+In the same units as the thermal history file, which typically should be K.
+
 .. code-block:: python
 
 	sim.set_temperature_units("K")
@@ -201,7 +234,7 @@ Flag that sets whether a simulation will automatically save images of the fields
 
 	sim.set_autosave_rate(40000)
 	
-Sets how often a simulation will automatically save checkpoints/images, if the respective flags are set.
+Sets how often a simulation will automatically save checkpoints/images, if the respective flags are set. (Saves every X timesteps).
 	
 .. code-block:: python
 
@@ -211,9 +244,24 @@ Sets the boundary conditions for a given sim. Options are as follows:
 
 * "PERIODIC": Periodic boundary conditions
 * "NEUMANN": Neumann (defined gradient at boundary) boundary conditions
-* "DIRCHLET": Dirchlet (defined value at boundary) boundary conditions
-* ["PERIODIC", "NEUMANN"]: A list defines different boundary conditions along each dimensions. In this case, it would have periodic boundary conditions along 
-  the x axis, and Neumann boundary conditions along the y axis. Other permutations of the previous three values are also permitted.
+* "DIRICHLET": Dirichlet (defined value at boundary) boundary conditions
+* ["PERIODIC", "NEUMANN", "DIRICHLET"]: A list defines different boundary conditions along each dimensions. In this case, it would have periodic boundary conditions along 
+  the z axis, Neumann boundary conditions along the y axis, and Dirichlet boundary conditions along the x axis. (C-style array convention is z, y, x).
+  Other permutations of the previous three values are also permitted.
+* [["DIRICHLET", "NEUMANN"], ["DIRICHLET", "NEUMANN"], ["DIRICHLET", "NEUMANN"]]: A 2-D list defines the boundary condition on the left and right side of each dimension 
+  separately. In this case, the left (low-valued index) side would have Dirichlet boundary conditions, while the right (high-valued index) side would have Neumann BCs.
+  
+The values for Neumann and Dirichlet boundary conditions are located in sim.boundary_fields. Separate documentation will describe how to use these boundaries to their 
+fullest extent. By default, these boundaries have a value of zero, corresponding to Neumann conditions being no-flux (zero gradient across the boundary), and to 
+Dirichlet conditions enforcing a value of zero on the border (zero value at the boundary).
+  
+.. code-block:: python
+
+	sim.set_ghost_rows(32)
+
+Sets the number of ghost rows to be used for a parallel simulation. This increases the number of calculations that must be done, but also means that processes 
+only have to communicate with each other every X timesteps, due to these redundant calculations. For most practical simulation domain sizes run on multiple GPUs, 
+a value of 32 is close to optimal, but feel free to experiment!
 
 .. code-block:: python
 
@@ -227,7 +275,7 @@ diffusion example code
 	
 .. code-block:: python
 
-	sim.initialize_fields_and_imported_data()
+	sim.initialize_engine()
 	
 This function initializes the size and content of fields based on the previously defined parameters, as well as initializes boundary conditions, 
 loads data from TDB files, and creates and initializes the temperature field. Any changes you wish to make to field data must be done after 

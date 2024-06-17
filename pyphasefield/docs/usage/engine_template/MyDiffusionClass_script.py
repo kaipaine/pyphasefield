@@ -1,5 +1,5 @@
 #built for pyphasefield version 1.1.0, may not work on future versions!
-from MyDiffusionClass import MyDiffusionClass
+from MyDiffusion import MyDiffusionClass
 
 sim = MyDiffusionClass(dimensions=[500, 500])
 
@@ -19,7 +19,7 @@ data = {
 sim.set_user_data(data)
 
 #initialize simulation arrays, all parameter changes should be BEFORE this point!
-sim.initialize_fields_and_imported_data()
+sim.initialize_engine()
 
 #change array data here, for custom simulations
 """

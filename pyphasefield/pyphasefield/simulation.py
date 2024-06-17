@@ -1389,6 +1389,12 @@ class Simulation:
         
     def set_t_file_offset(self, offset_list):
         self._t_file_offset = offset_list
+    def set_t_file_offset_cells(self, offset_list):
+        self._t_file_offset = offset_list
+    def set_t_file_offset_units(self, offset_list):
+        self._t_file_offset = offset_list
+        for i in range(len(offset_list)):
+            self._t_file_offset[i] /= self.dx
         
     def set_t_file_min(self, t_min):
         self._t_file_clamp[0] = t_min
@@ -1412,6 +1418,8 @@ class Simulation:
         self._autosave_save_images_flag = autosave_save_images_flag
     def set_autosave_rate(self, autosave_rate):
         self._autosave_rate = autosave_rate
+    def set_ghost_rows(self, rows):
+        self._ghost_rows = rows
         
     def set_boundary_conditions(self, boundary_conditions_type):
         """

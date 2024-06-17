@@ -2,9 +2,8 @@ Installation Instructions
 =========================
 
 Pyphasefield is a pure-python package and thus may be installed through `PyPI`_ using the command ``pip install pyphasefield``. 
-However, it is **strongly** recommended to install pyphasefield into an Anaconda_ installation, as this permits the easy use of two powerful 
-packages which greatly increase the scope of what pyphasefield can do: `pycalphad`_ (Access arbitrary thermodynamics using Thermodynamic 
-DataBase (TDB) files), and `numba`_ (Run accelerated phase field simulations using General Purpose GPU computing). 
+However, it is **strongly** recommended to install pyphasefield into an Anaconda_ installation, as this permits the easy use of the package `numba`_ 
+which enables running accelerated phase field simulations using General Purpose GPU computing. 
 
 Anaconda Installation Instructions
 ----------------------------------
@@ -12,14 +11,15 @@ This tutorial assumes you have installed Anaconda_ and (optionally) created and 
 packages, separate from the base installation. After opening the Anaconda terminal ("Anaconda Prompt" on Windows) and activating your 
 environment if necessary, run the following commands to install pyphasefield, as well as recommended (but not required) packages:
 
-* ``pip install pyphasefield``: Installs pyphasefield, along with required dependencies
-* Optional: ``conda install -c conda-forge pycalphad==0.8.4``: Installs pycalphad, along with required dependencies (currently requires an older version, working to update to the latest)
+* ``pip install pyphasefield``: Installs pyphasefield alone with no dependencies
+* ``python -m pyphasefield``: Runs the pyphasefield installation script, to install all dependencies
 
-If your computer has a NVIDIA GPU, it is strongly recommended to also install numba (along with cudatoolkit) to be able to run 
-phase field simulations on your GPU, as it can lead to speedups of over 100x. To do so, run the following commands:
+These dependencies include (among others):
 
-* Optional: ``conda install numba``: Installs numba, along with required dependencies
-* Optional: ``conda install cudatoolkit``: Installs cudatoolkit, which numba needs to make CUDA calls to the GPU
+* Numba/Cudatoolkit: enables python to interface with the GPU
+* mpi4py: enables parallel simulations using multiple GPUs (if multiple GPUs are available - like on supercomputer clusters)
+* pycalphad: enables interfacing with TDB (Thermodynamic DataBase) files for arbitrary thermodynamics to be used in phase field
+* h5py: enables saving/loading HDF5 files. Required, but optionally builds against a parallel hdf5 distribution for parallel sims
 
 .. warning::
 	If you are using an Anaconda environment, Jupyter notebook may not detect packages installed in the environment by default. To ensure 
@@ -28,7 +28,8 @@ phase field simulations on your GPU, as it can lead to speedups of over 100x. To
 	
 	* ``conda install notebook ipykernel``
 	* ``ipython kernel install --user``
-
+	
+	Running the installation script can create a jupyter kernel for you automatically, which may negate the need to do this.
 
 
 

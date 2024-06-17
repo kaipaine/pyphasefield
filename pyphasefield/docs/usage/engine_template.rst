@@ -43,9 +43,9 @@ The Code
 			pass
 			
 			
-		def initialize_fields_and_imported_data(self):
-			super().initialize_fields_and_imported_data()
-			#initialization of fields/imported data goes below
+		def initialize_engine(self):
+			super().initialize_engine()
+			#final initialization of the engine goes below
 			#runs *after* tdb, thermal, fields, and boundary conditions are loaded/initialized
 							
 		def just_before_simulating(self):
@@ -171,9 +171,9 @@ Altogether, the code looks like this for MyDiffusionClass.py
 			c[length // 4:3 * length // 4, width // 4:3 * width // 4] = 1
 			self.add_field(c, "c")
 			
-		def initialize_fields_and_imported_data(self):
-			super().initialize_fields_and_imported_data()
-			#initialization of fields/imported data goes below
+		def initialize_engine(self):
+			super().initialize_engine()
+			#final initialization of the engine goes below
 			#runs *after* tdb, thermal, fields, and boundary conditions are loaded/initialized
 							
 		def just_before_simulating(self):
@@ -203,7 +203,7 @@ Now, if we use a slightly edited script from the diffusion example:
 .. code-block:: python
 
 	#built for pyphasefield version 1.1.0, may not work on future versions!
-	from MyDiffusionClass import MyDiffusionClass
+	from MyDiffusion import MyDiffusionClass
 
 	sim = MyDiffusionClass(dimensions=[500, 500])
 
@@ -223,7 +223,7 @@ Now, if we use a slightly edited script from the diffusion example:
 	sim.set_user_data(data)
 
 	#initialize simulation arrays, all parameter changes should be BEFORE this point!
-	sim.initialize_fields_and_imported_data()
+	sim.initialize_engine()
 
 	#change array data here, for custom simulations
 	"""

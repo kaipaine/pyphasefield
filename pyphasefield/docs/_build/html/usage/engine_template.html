@@ -121,9 +121,9 @@ template file may be downloaded <a class="reference download internal" download=
                 <span class="k">pass</span>
 
 
-        <span class="k">def</span> <span class="nf">initialize_fields_and_imported_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">initialize_fields_and_imported_data</span><span class="p">()</span>
-                <span class="c1">#initialization of fields/imported data goes below</span>
+        <span class="k">def</span> <span class="nf">initialize_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">initialize_engine</span><span class="p">()</span>
+                <span class="c1">#final initialization of the engine goes below</span>
                 <span class="c1">#runs *after* tdb, thermal, fields, and boundary conditions are loaded/initialized</span>
 
         <span class="k">def</span> <span class="nf">just_before_simulating</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -236,9 +236,9 @@ specify one. This isn’t required, but doesn’t hurt:</p>
                 <span class="n">c</span><span class="p">[</span><span class="n">length</span> <span class="o">//</span> <span class="mi">4</span><span class="p">:</span><span class="mi">3</span> <span class="o">*</span> <span class="n">length</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">width</span> <span class="o">//</span> <span class="mi">4</span><span class="p">:</span><span class="mi">3</span> <span class="o">*</span> <span class="n">width</span> <span class="o">//</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">add_field</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">initialize_fields_and_imported_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">initialize_fields_and_imported_data</span><span class="p">()</span>
-                <span class="c1">#initialization of fields/imported data goes below</span>
+        <span class="k">def</span> <span class="nf">initialize_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">initialize_engine</span><span class="p">()</span>
+                <span class="c1">#final initialization of the engine goes below</span>
                 <span class="c1">#runs *after* tdb, thermal, fields, and boundary conditions are loaded/initialized</span>
 
         <span class="k">def</span> <span class="nf">just_before_simulating</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -266,7 +266,7 @@ specify one. This isn’t required, but doesn’t hurt:</p>
 </div>
 <p>Now, if we use a slightly edited script from the diffusion example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#built for pyphasefield version 1.1.0, may not work on future versions!</span>
-<span class="kn">from</span> <span class="nn">MyDiffusionClass</span> <span class="kn">import</span> <span class="n">MyDiffusionClass</span>
+<span class="kn">from</span> <span class="nn">MyDiffusion</span> <span class="kn">import</span> <span class="n">MyDiffusionClass</span>
 
 <span class="n">sim</span> <span class="o">=</span> <span class="n">MyDiffusionClass</span><span class="p">(</span><span class="n">dimensions</span><span class="o">=</span><span class="p">[</span><span class="mi">500</span><span class="p">,</span> <span class="mi">500</span><span class="p">])</span>
 
@@ -286,7 +286,7 @@ specify one. This isn’t required, but doesn’t hurt:</p>
 <span class="n">sim</span><span class="o">.</span><span class="n">set_user_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
 <span class="c1">#initialize simulation arrays, all parameter changes should be BEFORE this point!</span>
-<span class="n">sim</span><span class="o">.</span><span class="n">initialize_fields_and_imported_data</span><span class="p">()</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">initialize_engine</span><span class="p">()</span>
 
 <span class="c1">#change array data here, for custom simulations</span>
 <span class="sd">&quot;&quot;&quot;</span>
