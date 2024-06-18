@@ -1445,7 +1445,7 @@ class Simulation:
                 self._boundary_conditions_type.append([])
                 self._boundary_conditions_type[i].append(bc)
                 self._boundary_conditions_type[i].append(bc)
-        elif(bc[0] is list): #double list, left and right bcs in each sublist, the "proper" format
+        elif(type(bc[0]) is list): #double list, left and right bcs in each sublist, the "proper" format
             self._boundary_conditions_type = bc
         elif(len(bc) == len(self.dimensions)): #only 1 bc per dimension, symmetric
             self._boundary_conditions_type = []
@@ -1516,7 +1516,7 @@ class Simulation:
                         self.temperature.data[neumann_slices_target[k][i]] = self.temperature.data[neumann_slices_source[k][i]]
                     for j in range(len(self.fields)):
                         self.fields[j].data[neumann_slices_target[k][i]] = self.fields[j].data[neumann_slices_source[k][i]] - self.dx*self.boundary_fields[j].data[neumann_slices_target[k][i]]
-                elif(self._boundary_conditions_type == "DIRICHLET"):
+                elif(self._boundary_conditions_type[i][k] == "DIRICHLET"):
                     if not(self.temperature is None):
                         #use neumann boundary conditions for temperature field if using dirichlet boundary conditions
                         self.temperature.data[neumann_slices_target[k][i]] = self.temperature.data[neumann_slices_source[k][i]]

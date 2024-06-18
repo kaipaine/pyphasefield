@@ -1,0 +1,49 @@
+How to use pyphasefield: Boundary Conditions
+============================================
+
+In this example, we will show how to fully utilize boundary conditions. Let us begin with the previous Diffusion example, 
+but with the field equal to zero everywhere. In the absence of boundary conditions, nothing should happen. 
+
+The Code
+~~~~~~~~
+
+.. code-block:: python
+
+	import pyphasefield.Engines as engines
+
+	sim = engines.Diffusion(dimensions=[500, 500])
+
+	#initialize non-array parameters
+	sim.set_framework("CPU_SERIAL") #"CPU_SERIAL", "GPU_SERIAL" (GPU_SERIAL requires numba)
+	sim.set_dx(1.)
+	sim.set_dt(0.1)
+	sim.set_save_path("data/diffusion_test")
+	sim.set_autosave_flag(True)
+	sim.set_autosave_save_images_flag(True)
+	sim.set_autosave_rate(2000)
+	sim.set_boundary_conditions("PERIODIC")
+
+	data = {
+		"D":1.
+	}
+	sim.set_user_data(data)
+
+	#initialize simulation arrays, all parameter changes should be BEFORE this point!
+	sim.initialize_engine()
+
+	#change array data here, for custom simulations
+	
+	#set the field values manually using numpy slicing, setting it to zero e
+	sim.fields[0].data[:] = 0.
+	
+
+
+	#initial conditions
+	sim.plot_simulation()
+
+	#run simulation
+	sim.simulate(2000)
+
+	#final conditions
+	sim.plot_simulation()
+	

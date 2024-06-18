@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../usage/script_template.html">How to use pyphasefield: Script Template</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usage/diffusion.html">How to use pyphasefield: Diffusion Engine</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usage/engine_template.html">How to use pyphasefield: Creating your own Engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/boundaries.html">How to use pyphasefield: Boundary Conditions</a></li>
 </ul>
 
         </div>
@@ -85,7 +86,7 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="pyphasefield.Engines.AnisoDorrGPU.AnisoDorrGPU">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyphasefield.Engines.AnisoDorrGPU.</span></span><span class="sig-name descname"><span class="pre">AnisoDorrGPU</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.AnisoDorrGPU.AnisoDorrGPU" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="pyphasefield.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href=".ipynb_checkpoints/pyphasefield-checkpoint.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyphasefield.Engines.AnisoDorrGPU.AnisoDorrGPU.init_fields">
 <span class="sig-name descname"><span class="pre">init_fields</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.AnisoDorrGPU.AnisoDorrGPU.init_fields" title="Link to this definition"></a></dt>
@@ -177,7 +178,7 @@ Can be overridden (call super.init_tdb_params() first!) to define model-specific
 <dl class="py class">
 <dt class="sig sig-object py" id="pyphasefield.Engines.CahnAllen.CahnAllen">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyphasefield.Engines.CahnAllen.</span></span><span class="sig-name descname"><span class="pre">CahnAllen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.CahnAllen.CahnAllen" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="pyphasefield.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href=".ipynb_checkpoints/pyphasefield-checkpoint.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyphasefield.Engines.CahnAllen.CahnAllen.init_fields">
 <span class="sig-name descname"><span class="pre">init_fields</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.CahnAllen.CahnAllen.init_fields" title="Link to this definition"></a></dt>
@@ -335,7 +336,7 @@ they are still considered to be “neighbors” conceptually</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyphasefield.Engines.CahnHilliard.CahnHilliard">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyphasefield.Engines.CahnHilliard.</span></span><span class="sig-name descname"><span class="pre">CahnHilliard</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.CahnHilliard.CahnHilliard" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="pyphasefield.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href=".ipynb_checkpoints/pyphasefield-checkpoint.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyphasefield.Engines.CahnHilliard.CahnHilliard.init_fields">
 <span class="sig-name descname"><span class="pre">init_fields</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.CahnHilliard.CahnHilliard.init_fields" title="Link to this definition"></a></dt>
@@ -503,7 +504,7 @@ they are still considered to be “neighbors” conceptually</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyphasefield.Engines.Diffusion.Diffusion">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyphasefield.Engines.Diffusion.</span></span><span class="sig-name descname"><span class="pre">Diffusion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.Diffusion.Diffusion" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="pyphasefield.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href=".ipynb_checkpoints/pyphasefield-checkpoint.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyphasefield.Engines.Diffusion.Diffusion.init_fields">
 <span class="sig-name descname"><span class="pre">init_fields</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.Diffusion.Diffusion.init_fields" title="Link to this definition"></a></dt>
@@ -847,7 +848,7 @@ the equation Ax=b for the matrix A and vectors x and b</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyphasefield.Engines.NCGPU.NCGPU">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyphasefield.Engines.NCGPU.</span></span><span class="sig-name descname"><span class="pre">NCGPU</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.NCGPU.NCGPU" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="pyphasefield.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href=".ipynb_checkpoints/pyphasefield-checkpoint.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyphasefield.Engines.NCGPU.NCGPU.init_fields">
 <span class="sig-name descname"><span class="pre">init_fields</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.NCGPU.NCGPU.init_fields" title="Link to this definition"></a></dt>
@@ -936,7 +937,7 @@ Reason: some numpy functions (i.e. sqrt) are incompatible with sympy floats!</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyphasefield.Engines.NCGPU_new.NCGPU_new">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyphasefield.Engines.NCGPU_new.</span></span><span class="sig-name descname"><span class="pre">NCGPU_new</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.NCGPU_new.NCGPU_new" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="pyphasefield.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href=".ipynb_checkpoints/pyphasefield-checkpoint.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyphasefield.Engines.NCGPU_new.NCGPU_new.init_fields">
 <span class="sig-name descname"><span class="pre">init_fields</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.NCGPU_new.NCGPU_new.init_fields" title="Link to this definition"></a></dt>
@@ -1234,7 +1235,7 @@ c = central value, p = positive neighbor, n = negative neighbor</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyphasefield.Engines.Template.Template">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyphasefield.Engines.Template.</span></span><span class="sig-name descname"><span class="pre">Template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.Template.Template" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="pyphasefield.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href=".ipynb_checkpoints/pyphasefield-checkpoint.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyphasefield.Engines.Template.Template.init_fields">
 <span class="sig-name descname"><span class="pre">init_fields</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.Template.Template.init_fields" title="Link to this definition"></a></dt>
@@ -1281,7 +1282,7 @@ Can be overridden (call super.init_tdb_params() first!) to define model-specific
 <dl class="py class">
 <dt class="sig sig-object py" id="pyphasefield.Engines.Warren1995.Warren1995">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyphasefield.Engines.Warren1995.</span></span><span class="sig-name descname"><span class="pre">Warren1995</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.Warren1995.Warren1995" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="pyphasefield.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href=".ipynb_checkpoints/pyphasefield-checkpoint.html#pyphasefield.simulation.Simulation" title="pyphasefield.simulation.Simulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyphasefield.Engines.Warren1995.Warren1995.init_fields">
 <span class="sig-name descname"><span class="pre">init_fields</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyphasefield.Engines.Warren1995.Warren1995.init_fields" title="Link to this definition"></a></dt>

@@ -14,6 +14,7 @@ Welcome to pyphasefield's documentation!
    usage/script_template
    usage/diffusion
    usage/engine_template
+   usage/boundaries
 
 
 
