@@ -1274,11 +1274,11 @@ class Simulation:
         else:
             for i in fields:
                 if(units == "cells"):
-                    extent = [0, _fields[i].get_cells().shape[1], 0, _fields[i].get_cells().shape[0]]
+                    extent = [0, _fields[i].get_cells().shape[1], _fields[i].get_cells().shape[0], 0]
                 elif(units == "cm"):
-                    extent = [0, _fields[i].get_cells().shape[1]*self.get_cell_spacing()*100., 0, _fields[i].get_cells().shape[0]*self.get_cell_spacing()]
+                    extent = [0, _fields[i].get_cells().shape[1]*self.get_cell_spacing()*100., _fields[i].get_cells().shape[0]*self.get_cell_spacing(), 0]
                 elif(units == "m"):
-                    extent = [0, _fields[i].get_cells().shape[1]*self.get_cell_spacing(), 0, _fields[i].get_cells().shape[0]*self.get_cell_spacing()/100.]
+                    extent = [0, _fields[i].get_cells().shape[1]*self.get_cell_spacing(), _fields[i].get_cells().shape[0]*self.get_cell_spacing()/100., 0]
                 if not (size is None):
                     plt.figure(figsize=size)
                 if(norm):

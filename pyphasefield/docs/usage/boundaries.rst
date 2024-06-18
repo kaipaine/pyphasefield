@@ -18,9 +18,7 @@ The Starting Code (don't use this!)
 	sim.set_dx(1.)
 	sim.set_dt(0.1)
 	sim.set_save_path("data/boundary_conditions_test")
-	sim.set_autosave_flag(True)
-	sim.set_autosave_save_images_flag(True)
-	sim.set_autosave_rate(2000)
+	sim.set_autosave_flag(False)
 	sim.set_boundary_conditions("PERIODIC")
 
 	data = {
@@ -42,7 +40,7 @@ The Starting Code (don't use this!)
 	sim.plot_simulation()
 
 	#run simulation
-	sim.simulate(2000)
+	sim.simulate(5000)
 
 	#final conditions
 	sim.plot_simulation()
@@ -69,7 +67,7 @@ list of Field instances. Similarly to sim.fields, values of the boundary field m
 wish to access.
 
 Of note: only the values on the surface of the boundary field will matter, as those values say what the value of the parameter (Dirichlet: value or Neumann: gradient) is at 
-that point on the boundary. Additionally, values at the "corners" of the boundary fields are not independent. 
+that point on the boundary. Additionally, values at the "corners" of the boundary fields are not independent! 
 
 For this example, we use changes to this interface parameter to illustrate what it does. We specify the boundary field edges in the following way:
 
@@ -92,9 +90,7 @@ The Final Code (use this!)
 	sim.set_dx(1.)
 	sim.set_dt(0.1)
 	sim.set_save_path("data/boundary_conditions_test")
-	sim.set_autosave_flag(True)
-	sim.set_autosave_save_images_flag(True)
-	sim.set_autosave_rate(2000)
+	sim.set_autosave_flag(False)
 	sim.set_boundary_conditions([["DIRICHLET", "NEUMANN"], ["DIRICHLET", "NEUMANN"]])
 
 	data = {
@@ -126,17 +122,17 @@ The Final Code (use this!)
 	#sim.boundary_fields[0].data[:, -1] = 0.
 	
 	#Neumann Y-axis
-	sim.boundary_fields[0].data[-1, :100] = 1.
-	sim.boundary_fields[0].data[-1, 100:200] = -1.
-	sim.boundary_fields[0].data[-1, 200:300] = 1.
-	sim.boundary_fields[0].data[-1, 300:400] = -1.
-	sim.boundary_fields[0].data[-1, 400:] = 1.
+	sim.boundary_fields[0].data[-1, :100] = 0.05
+	sim.boundary_fields[0].data[-1, 100:200] = -0.05
+	sim.boundary_fields[0].data[-1, 200:300] = 0.05
+	sim.boundary_fields[0].data[-1, 300:400] = -0.05
+	sim.boundary_fields[0].data[-1, 400:] = 0.05
 
 	#initial conditions
 	sim.plot_simulation()
 
 	#run simulation
-	sim.simulate(2000)
+	sim.simulate(5000)
 
 	#final conditions
 	sim.plot_simulation()
