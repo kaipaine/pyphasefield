@@ -51,7 +51,10 @@
 <li class="toctree-l1"><a class="reference internal" href="diffusion.html">How to use pyphasefield: Diffusion Engine</a></li>
 <li class="toctree-l1"><a class="reference internal" href="engine_template.html">How to use pyphasefield: Creating your own Engine</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">How to use pyphasefield: Boundary Conditions</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#the-code">The Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-starting-code-don-t-use-this">The Starting Code (don’t use this!)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-final-code-use-this">The Final Code (use this!)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#results">Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#downloads">Downloads</a></li>
 </ul>
 </li>
 </ul>
@@ -83,21 +86,19 @@
   <section id="how-to-use-pyphasefield-boundary-conditions">
 <h1>How to use pyphasefield: Boundary Conditions<a class="headerlink" href="#how-to-use-pyphasefield-boundary-conditions" title="Link to this heading"></a></h1>
 <p>In this example, we will show how to fully utilize boundary conditions. Let us begin with the previous Diffusion example,
-but with the field equal to zero everywhere. In the absence of boundary conditions, nothing should happen.</p>
-<section id="the-code">
-<h2>The Code<a class="headerlink" href="#the-code" title="Link to this heading"></a></h2>
+but with the field equal to one everywhere. In the absence of boundary conditions, nothing should happen.</p>
+<section id="the-starting-code-don-t-use-this">
+<h2>The Starting Code (don’t use this!)<a class="headerlink" href="#the-starting-code-don-t-use-this" title="Link to this heading"></a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyphasefield.Engines</span> <span class="k">as</span> <span class="nn">engines</span>
 
-<span class="n">sim</span> <span class="o">=</span> <span class="n">engines</span><span class="o">.</span><span class="n">Diffusion</span><span class="p">(</span><span class="n">dimensions</span><span class="o">=</span><span class="p">[</span><span class="mi">500</span><span class="p">,</span> <span class="mi">500</span><span class="p">])</span>
+<span class="n">sim</span> <span class="o">=</span> <span class="n">engines</span><span class="o">.</span><span class="n">Diffusion</span><span class="p">(</span><span class="n">dimensions</span><span class="o">=</span><span class="p">[</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">])</span>
 
 <span class="c1">#initialize non-array parameters</span>
 <span class="n">sim</span><span class="o">.</span><span class="n">set_framework</span><span class="p">(</span><span class="s2">&quot;CPU_SERIAL&quot;</span><span class="p">)</span> <span class="c1">#&quot;CPU_SERIAL&quot;, &quot;GPU_SERIAL&quot; (GPU_SERIAL requires numba)</span>
 <span class="n">sim</span><span class="o">.</span><span class="n">set_dx</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
 <span class="n">sim</span><span class="o">.</span><span class="n">set_dt</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
-<span class="n">sim</span><span class="o">.</span><span class="n">set_save_path</span><span class="p">(</span><span class="s2">&quot;data/diffusion_test&quot;</span><span class="p">)</span>
-<span class="n">sim</span><span class="o">.</span><span class="n">set_autosave_flag</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">sim</span><span class="o">.</span><span class="n">set_autosave_save_images_flag</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">sim</span><span class="o">.</span><span class="n">set_autosave_rate</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_save_path</span><span class="p">(</span><span class="s2">&quot;data/boundary_conditions_test&quot;</span><span class="p">)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_autosave_flag</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">sim</span><span class="o">.</span><span class="n">set_boundary_conditions</span><span class="p">(</span><span class="s2">&quot;PERIODIC&quot;</span><span class="p">)</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
@@ -110,8 +111,8 @@ but with the field equal to zero everywhere. In the absence of boundary conditio
 
 <span class="c1">#change array data here, for custom simulations</span>
 
-<span class="c1">#set the field values manually using numpy slicing, setting it to zero e</span>
-<span class="n">sim</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.</span>
+<span class="c1">#set the field values manually using numpy slicing, setting it to one everywhere</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">1.</span>
 
 
 
@@ -125,6 +126,111 @@ but with the field equal to zero everywhere. In the absence of boundary conditio
 <span class="n">sim</span><span class="o">.</span><span class="n">plot_simulation</span><span class="p">()</span>
 </pre></div>
 </div>
+<p>In order to set what type of boundary conditions, we can modify the function sim.set_boundary_conditions(). As previously
+mentioned in the script template example, some options are:</p>
+<ul class="simple">
+<li><p>“PERIODIC”: Periodic boundary conditions</p></li>
+<li><p>“NEUMANN”: Neumann (defined gradient at boundary) boundary conditions</p></li>
+<li><p>“DIRICHLET”: Dirichlet (defined value at boundary) boundary conditions</p></li>
+<li><p>[“PERIODIC”, “NEUMANN”]: A list defines different boundary conditions along each dimensions. In this case, it would have periodic boundary conditions along
+the z axis, Neumann boundary conditions along the y axis, and Dirichlet boundary conditions along the x axis. (C-style array convention is y, x).
+Other permutations of the previous three values are also permitted. The list should have length equal to the number of dimensions of the simulation.</p></li>
+<li><p>[[“DIRICHLET”, “NEUMANN”], [“DIRICHLET”, “NEUMANN”]]: A 2-D list defines the boundary condition on the left and right side of each dimension
+separately. In this case, the left (low-valued index) side would have Dirichlet boundary conditions, while the right (high-valued index) side would have Neumann BCs.
+The list should have shape equal to [D, 2], where D is the number of dimensions of the simulation.</p></li>
+</ul>
+<p>For this example, let’s use that last case, [[“DIRICHLET”, “NEUMANN”], [“DIRICHLET”, “NEUMANN”]].</p>
+<p>Unlike periodic boundary conditions, Dirichlet and Neumann boundary conditions are parameterized: there is some value that is set at the interface for dirichlet boundaries,
+and some value that is set as the gradient at the interface for neumann boundaries. These values can be set in pyphasefield using the sim.boundary_fields object, which is a
+list of Field instances. Similarly to sim.fields, values of the boundary field may be accessed using sim.boundary_fields[0].data, replacing 0 with the index of the Field you
+wish to access.</p>
+<p>Of note: only the values on the surface of the boundary field will matter, as those values say what the value of the parameter (Dirichlet: value or Neumann: gradient) is at
+that point on the boundary. Additionally, values at the “corners” of the boundary fields are not independent!</p>
+<p>For this example, we use changes to this interface parameter to illustrate what it does. We specify the boundary field edges in the following way:</p>
+<ul class="simple">
+<li><p>Dirichlet on left-side of X-axis: split into four pieces, two unchanged (default behavior: boundary value 0), two with boundary value 2</p></li>
+<li><p>Dirichlet on left-side of Y-axis: split into three pieces, two with boundary value 1, with the center being boundary value 4</p></li>
+<li><p>Neumann on right-side of X-axis: no change to the boundary field, remains at its default behavior (zero gradient = no flux boundary condition)</p></li>
+<li><p>Neumann on right-side of Y-axis: split into five pieces, three with a gradient of 0.05, three with a gradient of -0.05.</p></li>
+</ul>
+<p>We also show a far future snapshot to illustrate the nature of these simulations. Simulations are perfectly ok with values being negative, even if negative concentration is
+unphysical in real life!</p>
+</section>
+<section id="the-final-code-use-this">
+<h2>The Final Code (use this!)<a class="headerlink" href="#the-final-code-use-this" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyphasefield.Engines</span> <span class="k">as</span> <span class="nn">engines</span>
+
+<span class="n">sim</span> <span class="o">=</span> <span class="n">engines</span><span class="o">.</span><span class="n">Diffusion</span><span class="p">(</span><span class="n">dimensions</span><span class="o">=</span><span class="p">[</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">])</span>
+
+<span class="c1">#initialize non-array parameters</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_framework</span><span class="p">(</span><span class="s2">&quot;CPU_SERIAL&quot;</span><span class="p">)</span> <span class="c1">#&quot;CPU_SERIAL&quot;, &quot;GPU_SERIAL&quot; (GPU_SERIAL requires numba)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_dx</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_dt</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_save_path</span><span class="p">(</span><span class="s2">&quot;data/boundary_conditions_test&quot;</span><span class="p">)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_autosave_flag</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_boundary_conditions</span><span class="p">([[</span><span class="s2">&quot;DIRICHLET&quot;</span><span class="p">,</span> <span class="s2">&quot;NEUMANN&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;DIRICHLET&quot;</span><span class="p">,</span> <span class="s2">&quot;NEUMANN&quot;</span><span class="p">]])</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;D&quot;</span><span class="p">:</span><span class="mf">1.</span>
+<span class="p">}</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_user_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+<span class="c1">#initialize simulation arrays, all parameter changes should be BEFORE this point!</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">initialize_engine</span><span class="p">()</span>
+
+<span class="c1">#change array data here, for custom simulations</span>
+
+<span class="c1">#set the field values manually using numpy slicing, setting it to one everywhere</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">1.</span>
+
+<span class="c1">#set the boundary fields!</span>
+<span class="c1">#X-axis Dirichlet, commented lines are default behavior</span>
+<span class="c1">#sim.boundary_fields[0].data[:50, 0] = 0.</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">boundary_fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">50</span><span class="p">:</span><span class="mi">100</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">2.</span>
+<span class="c1">#sim.boundary_fields[0].data[100:150, 0] = 0.</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">boundary_fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">150</span><span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">2.</span>
+
+<span class="c1">#Y-axis Dirichlet</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">boundary_fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:</span><span class="mi">66</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">boundary_fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">133</span><span class="p">:]</span> <span class="o">=</span> <span class="mf">1.</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">boundary_fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">66</span><span class="p">:</span><span class="mi">133</span><span class="p">]</span> <span class="o">=</span> <span class="mf">4.</span>
+
+<span class="c1">#Neumann X-axis has no change, equivalent to the bottom line</span>
+<span class="c1">#sim.boundary_fields[0].data[:, -1] = 0.</span>
+
+<span class="c1">#Neumann Y-axis</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">boundary_fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="mi">40</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.05</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">boundary_fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">40</span><span class="p">:</span><span class="mi">80</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.05</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">boundary_fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">80</span><span class="p">:</span><span class="mi">120</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.05</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">boundary_fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">120</span><span class="p">:</span><span class="mi">160</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.05</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">boundary_fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">160</span><span class="p">:]</span> <span class="o">=</span> <span class="mf">0.05</span>
+
+<span class="c1">#initial conditions</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">plot_simulation</span><span class="p">()</span>
+
+<span class="c1">#run simulation</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span>
+
+<span class="c1">#final conditions</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">plot_simulation</span><span class="p">()</span>
+
+<span class="c1">#run simulation</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="mi">48000</span><span class="p">)</span>
+
+<span class="c1">#final conditions</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">plot_simulation</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="results">
+<h2>Results<a class="headerlink" href="#results" title="Link to this heading"></a></h2>
+<img alt="../_images/boundary0.png" src="../_images/boundary0.png" />
+<img alt="../_images/boundary2000.png" src="../_images/boundary2000.png" />
+<img alt="../_images/boundary50000.png" src="../_images/boundary50000.png" />
+</section>
+<section id="downloads">
+<h2>Downloads<a class="headerlink" href="#downloads" title="Link to this heading"></a></h2>
+<p><a class="reference download internal" download="" href="../_downloads/cd2f4814a3e2e81d9c05138aca55c5c5/boundaries_notebook.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Jupyter</span> <span class="pre">Notebook</span></code></a></p>
 </section>
 </section>
 

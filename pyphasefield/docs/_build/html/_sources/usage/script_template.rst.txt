@@ -247,9 +247,10 @@ Sets the boundary conditions for a given sim. Options are as follows:
 * "DIRICHLET": Dirichlet (defined value at boundary) boundary conditions
 * ["PERIODIC", "NEUMANN", "DIRICHLET"]: A list defines different boundary conditions along each dimensions. In this case, it would have periodic boundary conditions along 
   the z axis, Neumann boundary conditions along the y axis, and Dirichlet boundary conditions along the x axis. (C-style array convention is z, y, x).
-  Other permutations of the previous three values are also permitted.
+  Other permutations of the previous three values are also permitted. The list should have length equal to the number of dimensions of the simulation.
 * [["DIRICHLET", "NEUMANN"], ["DIRICHLET", "NEUMANN"], ["DIRICHLET", "NEUMANN"]]: A 2-D list defines the boundary condition on the left and right side of each dimension 
   separately. In this case, the left (low-valued index) side would have Dirichlet boundary conditions, while the right (high-valued index) side would have Neumann BCs.
+  The list should have shape equal to [D, 2], where D is the number of dimensions of the simulation.
   
 The values for Neumann and Dirichlet boundary conditions are located in sim.boundary_fields. Separate documentation will describe how to use these boundaries to their 
 fullest extent. By default, these boundaries have a value of zero, corresponding to Neumann conditions being no-flux (zero gradient across the boundary), and to 
