@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Primer on GPU Integration &mdash; pyphasefield  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="How to use pyphasefield: Boundary Conditions" href="../usage/boundaries.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            pyphasefield
+              <img src="../_static/logo2.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation Instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/script_template.html">How to use pyphasefield: Script Template</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/diffusion.html">How to use pyphasefield: Diffusion Engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/engine_template.html">How to use pyphasefield: Creating your own Engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/boundaries.html">How to use pyphasefield: Boundary Conditions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Primer on GPU Integration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#host-vs-device-vs-global">Host vs. Device vs. Global</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#detailed-breakdown-of-the-for-loop-parallelizing-the-problem">Detailed breakdown of the for loop - parallelizing the problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mydiffusion-class-working-on-the-gpu">MyDiffusion Class working on the GPU</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">pyphasefield</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Primer on GPU Integration</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/technical/gpu_functions.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="primer-on-gpu-integration">
+<h1>Primer on GPU Integration<a class="headerlink" href="#primer-on-gpu-integration" title="Link to this heading"></a></h1>
+<p>The Graphics Processing Unit (GPU) represents a significant fraction of the past 20 years of computer hardware improvements.
+While clock speed has remained plateaued at a few gigahertz, computer performance has still improved by creating many separate CPU
+cores which can each work at a few gigahertz. At a very high level, GPUs can be thought of as a few thousand CPU cores in a pretty
+box. It’s not an exact analogy, but it’s pretty close. In order to utilize the power of the GPU (around a thousand times more
+processing power than a single CPU core), we use the python library Numba. Another similar library is CuPy, which eventually will
+replace Numba in pyphasefield. Here’s the information you need to know in order to make the jump from CPU to GPU, culminating
+with making our MyDiffusion class work on the GPU.</p>
+<section id="host-vs-device-vs-global">
+<h2>Host vs. Device vs. Global<a class="headerlink" href="#host-vs-device-vs-global" title="Link to this heading"></a></h2>
+<p>One very important takeaway is that we use a hybrid architecture for these engines. The high-performance number crunching takes
+place on the GPU, and the more high-level code, where speed is not as much of a priority, still takes place on the CPU like normal.
+So, it’s important to keep track of what code is running where.</p>
+<p>There are three main types of functions that are used in this architecture:</p>
+<ul class="simple">
+<li><p>Host functions: these are your normal, run of the mill python functions, which run on the CPU.</p></li>
+<li><p>Device functions: these are the equivalent of host functions, but instead run on the GPU. The CPU isn’t even allowed to call these!</p></li>
+<li><p>Global functions: these are functions which are called from the CPU, but are executed on the GPU. Inside this global function is
+where device functions may be called. One special restriction on global functions: they cannot “return” a value, any outputs from
+a global function must be retrieved through a parameter (like an array) which is passed to the function. Global functions are
+sometimes referred to as “kernels”.</p></li>
+</ul>
+<p>In addition, care must be paid to where memory (variables, arrays, and the like) exist. There are two categories:</p>
+<ul class="simple">
+<li><p>Host memory: these are your normal variables and arrays which exist on the CPU.</p></li>
+<li><p>Device memory: this memory only exists on the GPU, and cannot be accessed by the CPU! And similarly, any value you pass to either
+a global or a device function must exist in device memory: the GPU does not have access to host memory!</p></li>
+</ul>
+<p>Here is an example of all three types of functions, along with an example of transferring memory between CPU, GPU, and back.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numba</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">cuda</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1">#no decorator = host function. Normal python function which runs on the CPU</span>
+<span class="k">def</span> <span class="nf">host_func</span><span class="p">():</span>
+    <span class="c1">#create a numpy array of integers, x_host</span>
+    <span class="n">x_host</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1">#create a copy of x_host on the GPU. This copy is in device memory, and cannot be directly accessed by the CPU</span>
+    <span class="n">x_device</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">x_host</span><span class="p">)</span>
+
+    <span class="c1">#here, we call the global function, from the CPU, to be executed on the GPU. We pass the device array, x_device, to this function running on the GPU</span>
+    <span class="c1">#note the bracket notation, where we tell the GPU how many threads, and how many blocks of threads, to use</span>
+    <span class="n">thread_blocks</span> <span class="o">=</span> <span class="mi">256</span>
+    <span class="n">threads_per_block</span> <span class="o">=</span> <span class="mi">256</span>
+    <span class="n">global_func</span><span class="p">[</span><span class="n">thread_blocks</span><span class="p">,</span> <span class="n">threads_per_block</span><span class="p">](</span><span class="n">x_device</span><span class="p">)</span>
+
+    <span class="c1">#finally, copy the results, which have ben stored in x_device, back to x_host</span>
+    <span class="n">x_device</span><span class="o">.</span><span class="n">copy_to_host</span><span class="p">(</span><span class="n">x_host</span><span class="p">)</span>
+
+    <span class="c1">#print the results (on the CPU!)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">x_host</span><span class="p">)</span>
+
+<span class="c1">#this decorator tells numba to rewrite this python function as a global function to be run on the GPU, whenever it&#39;s called by the CPU</span>
+<span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">global_func</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">thread_id</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">num_threads</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">gridsize</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1">#this for loop ensures each thread only works on part of the array, thread 0 works on array index 0, thread 1 works on array index 1, etc.</span>
+    <span class="c1">#extra threads may go unused, which is completely ok other than being a little inefficient</span>
+    <span class="c1">#if the array was larger than num_threads, threads would run on more than one index, due to the stride being equal to num_threads</span>
+    <span class="c1">#e.g. if num_threads = 16, thread 0 would work on array indices 0, 16, 32, 48, 64, 80, and 96 for this array of size 100</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">num_threads</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">device_func</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+<span class="c1">#this decorator, slightly different than the previous one, defines this function as a device function,</span>
+<span class="c1">#    which may only be called on the GPU (by a global function, or another device function)</span>
+<span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">device_func</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">value</span><span class="o">*</span><span class="n">value</span>
+</pre></div>
+</div>
+<p>Here is the same code, but written in CuPy instead of Numba:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cupy</span> <span class="k">as</span> <span class="nn">cp</span>
+<span class="kn">from</span> <span class="nn">cupyx</span> <span class="kn">import</span> <span class="n">jit</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1">#no decorator = host function. Normal python function which runs on the CPU</span>
+<span class="k">def</span> <span class="nf">host_func</span><span class="p">():</span>
+    <span class="c1">#create a numpy array of integers, x_host</span>
+    <span class="n">x_host</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1">#create a copy of x_host on the GPU. This copy is in device memory, and cannot be directly accessed by the CPU</span>
+    <span class="n">x_device</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x_host</span><span class="p">)</span>
+
+    <span class="c1">#here, we call the global function, from the CPU, to be executed on the GPU. We pass the device array, x_device, to this function running on the GPU</span>
+    <span class="c1">#note the bracket notation, where we tell the GPU how many threads, and how many blocks of threads, to use</span>
+    <span class="n">thread_blocks</span> <span class="o">=</span> <span class="mi">256</span>
+    <span class="n">threads_per_block</span> <span class="o">=</span> <span class="mi">256</span>
+    <span class="n">global_func</span><span class="p">[</span><span class="n">thread_blocks</span><span class="p">,</span> <span class="n">threads_per_block</span><span class="p">](</span><span class="n">x_device</span><span class="p">)</span>
+
+    <span class="c1">#finally, copy the results, which have ben stored in x_device, back to x_host</span>
+    <span class="n">x_host</span> <span class="o">=</span> <span class="n">x_device</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+    <span class="c1">#print the results (on the CPU!)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">x_host</span><span class="p">)</span>
+
+<span class="c1">#this decorator tells numba to rewrite this python function as a global function to be run on the GPU, whenever it&#39;s called by the CPU</span>
+<span class="nd">@jit</span><span class="o">.</span><span class="n">rawkernel</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">global_func</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">thread_id</span> <span class="o">=</span> <span class="n">jit</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">num_threads</span> <span class="o">=</span> <span class="n">jit</span><span class="o">.</span><span class="n">gridsize</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1">#this for loop ensures each thread only works on part of the array, thread 0 works on array index 0, thread 1 works on array index 1, etc.</span>
+    <span class="c1">#extra threads may go unused, which is completely ok other than being a little inefficient</span>
+    <span class="c1">#if the array was larger than num_threads, threads would run on more than one index, due to the stride being equal to num_threads</span>
+    <span class="c1">#e.g. if num_threads = 16, thread 0 would work on array indices 0, 16, 32, 48, 64, 80, and 96 for this array of size 100</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">num_threads</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">device_func</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+<span class="c1">#this decorator, slightly different than the previous one, defines this function as a device function,</span>
+<span class="c1">#    which may only be called on the GPU (by a global function, or another device function)</span>
+<span class="nd">@jit</span><span class="o">.</span><span class="n">rawkernel</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">device_func</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">value</span><span class="o">*</span><span class="n">value</span>
+</pre></div>
+</div>
+<p>Going forwards, all GPU examples will only show the Numba example. Almost all of these can be converted to CuPy using different imports, check the above examples
+for the specific differences.</p>
+</section>
+<section id="detailed-breakdown-of-the-for-loop-parallelizing-the-problem">
+<h2>Detailed breakdown of the for loop - parallelizing the problem<a class="headerlink" href="#detailed-breakdown-of-the-for-loop-parallelizing-the-problem" title="Link to this heading"></a></h2>
+<p>There are a few comments on what the for loop is doing in the above example, but to ensure you are absolutely clear about what it is doing, here is
+a detailed explanation.</p>
+<ul class="simple">
+<li><p>If you have 8 independent tasks, and only 1 worker to do those tasks, that worker must do all 8 tasks. This is similar to what a CPU does: a single computer
+core sequentially does all instructions one after the other.</p></li>
+<li><p>If you have 8 independent tasks, and 4 workers to do those tasks, each worker only has to do 2 tasks each, in order for all 8 tasks to get done. This is the
+fundamental essence of parallelism - doing independent tasks with multiple workers reduces the completion time proportional to the number of workers, up to a point.</p></li>
+<li><p>If you have 8 independent tasks, and 100 workers to do those tasks, 8 of those workers will do 1 task, and 92 of them will have nothing to do. Parallelism
+cannot reduce the time further than the time it takes one worker to do one task!</p></li>
+</ul>
+<p>In order to actually distribute the tasks to the workers, we use a strided for loop, and use two functions from Numba to do so: numba.cuda.grid, and numba.cuda.gridsize:</p>
+<ul class="simple">
+<li><p>numba.cuda.grid(x) returns an integer if x==1 (1D arrangement of threads) or tuple of integers if x &gt; 1 (multidimensional arrangement of threads). These values are unique to the
+thread which made the call. In 1D, this integer is called the thread ID. In two or more dimensions, each integer gives the “index” of the thread in that dimension. These values may
+combined to give a single integer representing the thread ID (for example, in an 8x8 grid of threads, thread (2, 3) has thread ID equal to 2*8+3 = 19. As long as you are consistent,
+the specific order doesn’t really matter).</p></li>
+<li><p>numba.cuda.gridsize(x) returns an integer if x==1, or a tuple of integers if x &gt; 1. This value (or values) represent the overall number of threads. In the 1D case, with 64 total
+threads, this will return a value of 64 for every thread which calls this function, so every thread can know how many threads there are. In a 2D case, with an 8x8 grid of threads,
+this function will return (8,8), so that every thread knows that there are 8 indices of threads in the y direction, and 8 indices of threads in the x direction. Note that this uses
+C-array order convention: y is the first number, and x is the second number.</p></li>
+</ul>
+<p>We use these values to define our strided for loop. A strided for loop in python has syntax “for i in range(start, end, stride):”</p>
+<ul class="simple">
+<li><p>start is the value that the variable i begins at.</p></li>
+<li><p>end is the condition that defines if values of the variable i are “valid”. Assuming that “stride” has a positive value, if the value of i is less than “end”, that value will be
+considered valid. Importantly in this case, if “start” is equal to or larger than “end”, the for loop will not return any values.</p></li>
+<li><p>stride is how far to increment the value of the variable i. For example, if one value of i is 16, and stride is 6, the next value of i will be 22.</p></li>
+</ul>
+<p>For these strided for loops, we pass the result from numba.cuda.grid as the value for start, the overall number of tasks (or the number of tasks in that dimension)
+as the value for end, and the result from numba.cuda.gridsize as the value for stride. Here are three example kernels (global functions) showing this strided behavior in one and two
+dimensions, along with an image that illustrates how the strided for loop splits the problem into pieces for each thread. One of these examples shows what happens when the number of threads
+is much larger than the problem size, resulting in idle threads.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numba</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">cuda</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1">#all these kernels define an incrementation kernel, where the value at each array location is increased by 1</span>
+<span class="c1">#note that case1 and case3 are identical, the only difference comes from defining the number of threads!</span>
+
+<span class="n">arr_host</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">arr_device</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">arr_host</span><span class="p">)</span>
+
+<span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">case1</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
+    <span class="n">thread_id</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">num_threads</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">gridsize</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">num_tasks</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="n">num_tasks</span><span class="p">,</span> <span class="n">num_threads</span><span class="p">):</span>
+        <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+<span class="n">case1</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">](</span><span class="n">arr_device</span><span class="p">)</span> <span class="c1"># 1x4 = 4 total threads</span>
+
+<span class="n">arr_host</span> <span class="o">=</span> <span class="n">arr_device</span><span class="o">.</span><span class="n">copy_to_host</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">arr_host</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>[2 2 2 2 2 2 2 2]</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numba</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">cuda</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1">#all these kernels define an incrementation kernel, where the value at each array location is increased by 1</span>
+
+<span class="n">arr_host</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">arr_device</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">arr_host</span><span class="p">)</span>
+
+<span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">case2</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
+    <span class="n">thread_id_y</span><span class="p">,</span> <span class="n">thread_id_x</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">num_threads_y</span><span class="p">,</span> <span class="n">num_threads_x</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">gridsize</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">num_tasks_y</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">num_tasks_x</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># above two lines can alternatively be written as the line below:</span>
+    <span class="c1">#num_tasks_y, num_tasks_x = arr.shape</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">thread_id_y</span><span class="p">,</span> <span class="n">num_tasks_y</span><span class="p">,</span> <span class="n">num_threads_y</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">thread_id_x</span><span class="p">,</span> <span class="n">num_tasks_x</span><span class="p">,</span> <span class="n">num_threads_x</span><span class="p">):</span>
+            <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+<span class="n">case2</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">](</span><span class="n">arr_device</span><span class="p">)</span> <span class="c1"># 1x4 = 4 total threads, implicitly reshaped into a 2x2 array of threads in the kernel</span>
+
+<span class="n">arr_host</span> <span class="o">=</span> <span class="n">arr_device</span><span class="o">.</span><span class="n">copy_to_host</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">arr_host</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line">[[2 2 2 2]</div>
+<div class="line-block">
+<div class="line">[2 2 2 2]</div>
+<div class="line">[2 2 2 2]</div>
+<div class="line">[2 2 2 2]]</div>
+</div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numba</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">cuda</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1">#all these kernels define an incrementation kernel, where the value at each array location is increased by 1</span>
+<span class="c1">#note that case1 and case3 are identical, the only difference comes from defining the number of threads!</span>
+
+<span class="n">arr_host</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">arr_device</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">arr_host</span><span class="p">)</span>
+
+<span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">case3</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
+    <span class="n">thread_id</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">num_threads</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">gridsize</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">num_tasks</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="n">num_tasks</span><span class="p">,</span> <span class="n">num_threads</span><span class="p">):</span>
+        <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+<span class="n">case3</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">](</span><span class="n">arr_device</span><span class="p">)</span> <span class="c1"># 1x100 = 100 total threads</span>
+
+<span class="n">arr_host</span> <span class="o">=</span> <span class="n">arr_device</span><span class="o">.</span><span class="n">copy_to_host</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">arr_host</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>[2 2 2 2 2 2 2 2]</p>
+<img alt="../_images/ForLoop.png" src="../_images/ForLoop.png" />
+</section>
+<section id="mydiffusion-class-working-on-the-gpu">
+<h2>MyDiffusion Class working on the GPU<a class="headerlink" href="#mydiffusion-class-working-on-the-gpu" title="Link to this heading"></a></h2>
+<p>Using the above techniques, we can create a global function (kernel) which runs the diffusion stencil on every internal array location</p>
+<p>Some important notes:</p>
+<ul class="simple">
+<li><p>Pyphasefield has a “jit_placeholder” python file, which can be loaded in place of numba and numba.cuda in case GPU capabilities are not installed.
+Most GPU code shouldn’t run unless desired, but the decorators will run upon loading the Engine .py file. This placeholder replaces the decorators
+with harmless ones that do nothing, which allows the Engine to be loaded on a CPU-only installation, so long as the GPU code isn’t otherwise touched.</p></li>
+<li><p>Functions for the simulation loop are moved outside the class for clarity. This is best for GPU code, which cannot access the simulation object to
+begin with</p></li>
+<li><p>As the GPU_loop is a global function (kernel), it can only access memory that is explicitly on that GPU. Pyphasefield will automatically store the
+fields into device memory if running on the GPU, located as sim._fields_gpu_device. There is also a complementary array of fields, sim.fields_out_gpu_device,
+which stores the results for the next timestep. This is to avoid race conditions - situations where one thread rewrites a value in fields before another thread
+tries to read that value.</p></li>
+<li><p>Other model-specific parameters, like D, dx, and dt, also by default only exist in host memory. To move these over, we create a custom “params” object in device
+memory which holds these values. It’s generally best to create this object in the “just_before_simulating” function, which is guaranteed to run immediately before
+running the first simulation step, but after all other parameter changes which could be made.</p></li>
+<li><p>Unlike the above examples of splitting the problem in 2D, we do not actually want to evaluate the diffusion equation along the boundaries, hence a +1 offset to start,
+and -1 offset to end, in each of the strided for loops. Boundary conditions will be applied after each timestep to evaluate these cells, so even if it did not lead
+to illegal memory accesses, it would still be a waste of time!</p></li>
+<li><p>Pyphasefield has built-in expressions for (decent enough…) numbers of threads to use in GPU kernels, located in sim._gpu_blocks_per_grid_2D and
+sim._gpu_threads_per_block_2D. Similar expressions also exist for one and three dimensional cases. If you would like to try optimizing the number of threads to use
+for your specific engine, feel free! Pyphasefield by default uses 256 threads per block and 256 blocks per grid, split across multiple dimensions if called for.
+I believe a value of 512 is compatible with most GPUs, while 1024 is the maximum permitted by CUDA. These values may be inaccurate and subject to change.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="c1">#import from within Engines folder</span>
+    <span class="kn">from</span> <span class="nn">..field</span> <span class="kn">import</span> <span class="n">Field</span>
+    <span class="kn">from</span> <span class="nn">..simulation</span> <span class="kn">import</span> <span class="n">Simulation</span>
+    <span class="kn">from</span> <span class="nn">..ppf_utils</span> <span class="kn">import</span> <span class="n">COLORMAP_OTHER</span><span class="p">,</span> <span class="n">COLORMAP_PHASE</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1">#import classes from pyphasefield library</span>
+        <span class="kn">from</span> <span class="nn">pyphasefield.field</span> <span class="kn">import</span> <span class="n">Field</span>
+        <span class="kn">from</span> <span class="nn">pyphasefield.simulation</span> <span class="kn">import</span> <span class="n">Simulation</span>
+        <span class="kn">from</span> <span class="nn">pyphasefield.ppf_utils</span> <span class="kn">import</span> <span class="n">COLORMAP_OTHER</span><span class="p">,</span> <span class="n">COLORMAP_PHASE</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;Cannot import from pyphasefield library!&quot;</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">cuda</span>
+    <span class="kn">import</span> <span class="nn">numba</span>
+    <span class="kn">from</span> <span class="nn">numba.cuda.random</span> <span class="kn">import</span> <span class="n">create_xoroshiro128p_states</span><span class="p">,</span> <span class="n">xoroshiro128p_uniform_float32</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pyphasefield.jit_placeholder</span> <span class="k">as</span> <span class="nn">numba</span>
+    <span class="kn">import</span> <span class="nn">pyphasefield.jit_placeholder</span> <span class="k">as</span> <span class="nn">cuda</span>
+
+<span class="k">def</span> <span class="nf">CPU_loop</span><span class="p">(</span><span class="n">sim</span><span class="p">):</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">user_data</span><span class="p">[</span><span class="s2">&quot;D&quot;</span><span class="p">]</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">dx</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">dt</span>
+
+    <span class="c1">#define offset arrays, remember the sign of roll is opposite the direction of the cell of interest</span>
+    <span class="c1">#also, x is dimension 1, y is dimension 0 (C style arrays...)</span>
+    <span class="n">c_p0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c1">#x+1, y.</span>
+    <span class="n">c_m0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c1">#x-1, y.</span>
+    <span class="n">c_0p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1">#x, y+1.</span>
+    <span class="n">c_0m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1">#x, y-1.</span>
+
+    <span class="c1">#apply change from a single step</span>
+    <span class="n">c</span> <span class="o">+=</span> <span class="n">D</span><span class="o">*</span><span class="n">dt</span><span class="o">*</span><span class="p">(</span><span class="n">c_p0</span> <span class="o">+</span> <span class="n">c_m0</span> <span class="o">+</span> <span class="n">c_0p</span> <span class="o">+</span> <span class="n">c_0m</span> <span class="o">-</span> <span class="mi">4</span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="nd">@cuda</span><span class="o">.</span><span class="n">jit</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">GPU_loop</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">fields_out</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">c_out</span> <span class="o">=</span> <span class="n">fields_out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">thread_id_y</span><span class="p">,</span> <span class="n">thread_id_x</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">num_threads_y</span><span class="p">,</span> <span class="n">num_threads_x</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">gridsize</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">num_tasks_y</span><span class="p">,</span> <span class="n">num_tasks_x</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="n">coeff</span> <span class="o">=</span> <span class="n">D</span><span class="o">*</span><span class="n">dt</span><span class="o">/</span><span class="p">(</span><span class="n">dx</span><span class="o">*</span><span class="n">dx</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">thread_id_y</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_tasks_y</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_threads_y</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">thread_id_x</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_tasks_x</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_threads_x</span><span class="p">):</span>
+            <span class="n">c_out</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">coeff</span><span class="o">*</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">]</span><span class="o">+</span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">]</span><span class="o">+</span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">4</span><span class="o">*</span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">])</span>
+
+<span class="k">class</span> <span class="nc">MyDiffusionClass</span><span class="p">(</span><span class="n">Simulation</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1">#additional initialization code goes below</span>
+        <span class="c1">#runs *before* tdb, thermal, fields, and boundary conditions are loaded/initialized</span>
+
+    <span class="k">def</span> <span class="nf">init_tdb_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">init_tdb_params</span><span class="p">()</span>
+        <span class="c1">#additional tdb-related code goes below</span>
+        <span class="c1">#runs *after* tdb file is loaded, tdb_phases and tdb_components are initialized</span>
+        <span class="c1">#runs *before* thermal, fields, and boundary conditions are loaded/initialized</span>
+
+    <span class="k">def</span> <span class="nf">init_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1">#initialization of fields code goes here</span>
+        <span class="c1">#runs *after* tdb and thermal data is loaded/initialized</span>
+        <span class="c1">#runs *before* boundary conditions are initialized</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s2">&quot;D&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_data</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">user_data</span><span class="p">[</span><span class="s2">&quot;D&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.1</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">c</span><span class="p">[</span><span class="n">length</span> <span class="o">//</span> <span class="mi">4</span><span class="p">:</span><span class="mi">3</span> <span class="o">*</span> <span class="n">length</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">width</span> <span class="o">//</span> <span class="mi">4</span><span class="p">:</span><span class="mi">3</span> <span class="o">*</span> <span class="n">width</span> <span class="o">//</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_field</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">initialize_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">initialize_engine</span><span class="p">()</span>
+        <span class="c1">#final initialization of the engine goes below</span>
+        <span class="c1">#runs *after* tdb, thermal, fields, and boundary conditions are loaded/initialized</span>
+
+    <span class="k">def</span> <span class="nf">just_before_simulating</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">just_before_simulating</span><span class="p">()</span>
+        <span class="c1">#additional code to run just before beginning the simulation goes below</span>
+        <span class="c1">#runs immediately before simulating, no manual changes permitted to changes implemented here</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_uses_gpu</span><span class="p">):</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user_data</span><span class="p">[</span><span class="s2">&quot;D&quot;</span><span class="p">])</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dx</span><span class="p">)</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">user_data</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">params</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">simulation_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1">#code to run each simulation step goes here</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_uses_gpu</span><span class="p">):</span>
+            <span class="n">GPU_loop</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_gpu_blocks_per_grid_2D</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gpu_threads_per_block_2D</span><span class="p">](</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields_gpu_device</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields_out_gpu_device</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_data</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">CPU_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Running this code with the framework “CPU_SERIAL” retains the original behavior, while the framework “GPU_SERIAL” runs on the GPU, and is a bit faster. Diffusion is
+a relatively simple computation so there is not a significantly large speedup, but more complex models can demonstrate speedups of around 500x.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">MyDiffusionGPU</span> <span class="kn">import</span> <span class="n">MyDiffusionClass</span>
+
+<span class="n">sim</span> <span class="o">=</span> <span class="n">MyDiffusionClass</span><span class="p">(</span><span class="n">dimensions</span><span class="o">=</span><span class="p">[</span><span class="mi">500</span><span class="p">,</span> <span class="mi">500</span><span class="p">])</span>
+
+<span class="c1">#initialize non-array parameters</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_framework</span><span class="p">(</span><span class="s2">&quot;GPU_SERIAL&quot;</span><span class="p">)</span> <span class="c1">#&quot;CPU_SERIAL&quot; or &quot;GPU_SERIAL&quot;</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_dx</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_dt</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_save_path</span><span class="p">(</span><span class="s2">&quot;data/diffusion_test&quot;</span><span class="p">)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_autosave_flag</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_autosave_save_images_flag</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_autosave_rate</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_boundary_conditions</span><span class="p">(</span><span class="s2">&quot;PERIODIC&quot;</span><span class="p">)</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;D&quot;</span><span class="p">:</span><span class="mf">1.</span>
+<span class="p">}</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">set_user_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+<span class="c1">#initialize simulation arrays, all parameter changes should be BEFORE this point!</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">initialize_engine</span><span class="p">()</span>
+
+<span class="c1">#change array data here, for custom simulations</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">sim.fields[0].data[:] = 1.</span>
+<span class="sd">length = sim.dimensions[0]</span>
+<span class="sd">width = sim.dimensions[1]</span>
+<span class="sd">sim.fields[0].data[length // 4:3 * length // 4, width // 4:3 * width // 4] = 0.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1">#initial conditions</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">plot_simulation</span><span class="p">()</span>
+
+<span class="c1">#run simulation</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span>
+
+<span class="c1">#final conditions</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">plot_simulation</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../_images/diffusion1.png" src="../_images/diffusion1.png" />
+<img alt="../_images/diffusion2.png" src="../_images/diffusion2.png" />
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../usage/boundaries.html" class="btn btn-neutral float-left" title="How to use pyphasefield: Boundary Conditions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, pyphasefield Development Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

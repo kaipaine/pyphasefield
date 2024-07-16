@@ -234,6 +234,7 @@ class Simulation:
         self._t_file_units = ["K", "m"]
         self._t_file_offset = [0, 0, 0] #number of cells to offset the origin of the sim, w.r.t. the thermal file
         self._t_file_clamp = [None, None] #clamp the values of temperature when using thermal files to between these values
+        self._t_file_2d_normal = "z"
         self._initialized_t_file_helper_arrays = False
         
         #tdb related variables
@@ -410,7 +411,7 @@ class Simulation:
                 
     def _build_interpolated_t_array(self, f, index):
         if not(self._initialized_t_file_helper_arrays):
-            self._build_t_file_helper_arrays() #creates self._t_interpolation_points just once
+            self._build_t_file_helper_arrays(f) #creates self._t_interpolation_points just once
             self._initialized_t_file_helper_arrays = True
         dims_F = f["gridsize_F"][:]
         array = f["data"][:][index]
@@ -444,9 +445,23 @@ class Simulation:
             return np.clip(interp_array, self._t_file_clamp[0], self._t_file_clamp[1])
             
         
-    def _build_t_file_helper_arrays(self):
+    def _build_t_file_helper_arrays(self, f):
         aranges = []
-        for i in range(len(self.dimensions)):
+        dim_size = len(self.dimensions)
+        t_size = len(f["gridsize_F"][:])
+        offset = [0, 1, 2]
+        index = 0
+        if not(dim_size == t_size):
+            if(self._t_file_2d_normal == "z"):
+                offset = [1, 2]
+            elif(self._t_file_2d_normal == "y"):
+                offset = [0, 2]
+                index = 1
+            elif(self._t_file_2d_normal == "x"):
+                offset = [0, 1]
+                index = 2
+            
+        for i in range(dim_size):
             lb = -1 #left_boundary
             rb = 1 #right_boundary
             if(self._parallel):
@@ -458,10 +473,19 @@ class Simulation:
                     rb = self._ghost_rows #TODO: change when creating special case for a GPU being its own neighbor
                 elif(self._ngbc[i][1] == 0):
                     rb = self._ghost_rows
-            aranges.append((np.arange(lb, self.dimensions[i]+rb, dtype=float)+self._dim_offset[i]+self._t_file_offset[i])*self.dx)
+            aranges.append((np.arange(lb, self.dimensions[i]+rb, dtype=float)+self._dim_offset[i]+self._t_file_offset[offset[i]])*self.dx)
         grid = np.meshgrid(*aranges, indexing='ij')
         if(len(grid) == 2):
-            self._t_interpolation_points = np.array([grid[0].ravel(), grid[1].ravel()]).T
+            if(t_size == 3):
+                missing_index = np.zeros(grid[0].size, dtype=float)+(self._t_file_offset[index]*self.dx)
+                if(self._t_file_2d_normal == "z"):
+                    self._t_interpolation_points = np.array([missing_index, grid[0].ravel(), grid[1].ravel()]).T
+                elif(self._t_file_2d_normal == "y"):
+                    self._t_interpolation_points = np.array([grid[0].ravel(), missing_index, grid[1].ravel()]).T
+                elif(self._t_file_2d_normal == "x"):
+                    self._t_interpolation_points = np.array([grid[0].ravel(), grid[1].ravel(), missing_index]).T
+            else:
+                self._t_interpolation_points = np.array([grid[0].ravel(), grid[1].ravel()]).T
         elif(len(grid) == 3):
             self._t_interpolation_points = np.array([grid[0].ravel(), grid[1].ravel(), grid[2].ravel()]).T
                 
@@ -1221,26 +1245,18 @@ class Simulation:
             return
         if fields is None:
             fields = range(len(_fields))
-        if(len(_fields[0].get_cells().shape) == 1): #1d plot
-            x = np.arange(0, len(_fields[0].get_cells()))
-            for i in fields:
-                plt.plot(x, _fields[i].get_cells())
-            if(show_images):
-                plt.show()
-            else:
-                plt.close()
-        elif((len(_fields[0].get_cells()) == 1) or (len(_fields[0].get_cells()[0]) == 1)): #effective 1d plot, 2d but one dimension = 1
-            x = np.arange(0, len(_fields[0].get_cells().flatten()))
+        if(len(np.squeeze(_fields[0].get_cells()).shape) == 1): #1d plot
+            x = np.arange(0, len(np.squeeze(_fields[0].get_cells())))
             legend = []
             for i in fields:
-                plt.plot(x, _fields[i].get_cells().flatten())
+                plt.plot(x, np.squeeze(_fields[i].get_cells()))
                 legend.append(_fields[i].name)
             plt.legend(legend)
             if(show_images):
                 plt.show()
             else:
                 plt.close()
-        elif(len(self.dimensions) == 3): #3D plot, just do an isosurface of the first field (usually phi) for now...
+        elif(len(np.squeeze(_fields[0].get_cells()).shape) == 3): #3D plot, just do an isosurface of the first field (usually phi) for now...
             points = np.argwhere((self.fields[0].get_cells() > 0.45) & (self.fields[0].get_cells() < 0.55)).T
             fig = plt.figure(figsize=(12,7))
             ax = fig.add_subplot(projection='3d')
@@ -1273,21 +1289,22 @@ class Simulation:
             plt.show()
         else:
             for i in fields:
+                squeezed_field = np.squeeze(_fields[i].get_cells())
                 if(units == "cells"):
-                    extent = [0, _fields[i].get_cells().shape[1], _fields[i].get_cells().shape[0], 0]
+                    extent = [0, squeezed_field.shape[1], squeezed_field.shape[0], 0]
                 elif(units == "cm"):
-                    extent = [0, _fields[i].get_cells().shape[1]*self.get_cell_spacing()*100., _fields[i].get_cells().shape[0]*self.get_cell_spacing(), 0]
+                    extent = [0, squeezed_field.shape[1]*self.get_cell_spacing()*100., squeezed_field.shape[0]*self.get_cell_spacing(), 0]
                 elif(units == "m"):
-                    extent = [0, _fields[i].get_cells().shape[1]*self.get_cell_spacing(), _fields[i].get_cells().shape[0]*self.get_cell_spacing()/100., 0]
+                    extent = [0, squeezed_field.shape[1]*self.get_cell_spacing(), squeezed_field.shape[0]*self.get_cell_spacing()/100., 0]
                 if not (size is None):
                     plt.figure(figsize=size)
                 if(norm):
                     if(i == 0):
-                        plt.imshow(_fields[i].get_cells(), interpolation=interpolation, cmap=_fields[i].colormap, extent=extent, norm=PowerNorm(10, vmin=0, vmax=1))
+                        plt.imshow(squeezed_field, interpolation=interpolation, cmap=_fields[i].colormap, extent=extent, norm=PowerNorm(10, vmin=0, vmax=1))
                     else:
-                        plt.imshow(_fields[i].get_cells(), interpolation=interpolation, cmap=_fields[i].colormap, extent=extent)
+                        plt.imshow(squeezed_field, interpolation=interpolation, cmap=_fields[i].colormap, extent=extent)
                 else:
-                    plt.imshow(_fields[i].get_cells(), interpolation=interpolation, cmap=_fields[i].colormap, extent=extent)
+                    plt.imshow(squeezed_field, interpolation=interpolation, cmap=_fields[i].colormap, extent=extent)
                 plt.title(_fields[i].name)
                 plt.colorbar()
                 if(units == "cm"):
@@ -1395,6 +1412,9 @@ class Simulation:
         self._t_file_offset = offset_list
         for i in range(len(offset_list)):
             self._t_file_offset[i] /= self.dx
+            
+    def set_t_file_normal(self, normal):
+        self._t_file_2d_normal = normal
         
     def set_t_file_min(self, t_min):
         self._t_file_clamp[0] = t_min
