@@ -222,6 +222,7 @@ class Simulation:
         self._temperature_type = temperature_type
         self._temperature_path = temperature_path
         self._temperature_units = temperature_units
+        self._temperature_origin = [0, 0, 0] #which cell in the simulation is considered [0, 0, 0] for the thermal field
         self._initial_T = initial_T
         self._dTdx = dTdx
         self._dTdy = dTdy
@@ -233,6 +234,7 @@ class Simulation:
         self._t_file_gpu_devices = [None, None]
         self._t_file_units = ["K", "m"]
         self._t_file_offset = [0, 0, 0] #number of cells to offset the origin of the sim, w.r.t. the thermal file
+        
         self._t_file_clamp = [None, None] #clamp the values of temperature when using thermal files to between these values
         self._t_file_2d_normal = "z"
         self._initialized_t_file_helper_arrays = False
@@ -473,7 +475,7 @@ class Simulation:
                     rb = self._ghost_rows #TODO: change when creating special case for a GPU being its own neighbor
                 elif(self._ngbc[i][1] == 0):
                     rb = self._ghost_rows
-            aranges.append((np.arange(lb, self.dimensions[i]+rb, dtype=float)+self._dim_offset[i]+self._t_file_offset[offset[i]])*self.dx)
+            aranges.append((np.arange(lb, self.dimensions[i]+rb, dtype=float)+self._dim_offset[i]-self._temperature_origin[i]+self._t_file_offset[offset[i]])*self.dx)
         grid = np.meshgrid(*aranges, indexing='ij')
         if(len(grid) == 2):
             if(t_size == 3):
@@ -507,11 +509,11 @@ class Simulation:
         array = np.zeros(self.dimensions)
         array += self._initial_T
         if(self._parallel):
-            array += self._dTdx*self.dx*self._dim_offset[ndims-1]
+            array += self._dTdx*self.dx*(self._dim_offset[ndims-1]-self._temperature_origin[ndims-1])
             if(len(self.dimensions) > 1):
-                array += self._dTdy*self.dx*self._dim_offset[ndims-2]
+                array += self._dTdy*self.dx*(self._dim_offset[ndims-2]-self._temperature_origin[ndims-2])
             if(len(self.dimensions) > 2):
-                array += self._dTdz*self.dx*self._dim_offset[ndims-3]
+                array += self._dTdz*self.dx*(self._dim_offset[ndims-3]-self._temperature_origin[ndims-3])
         if not ((self._dTdx is None) or (self._dTdx == 0)):
             x_t_array = self.dx*self._dTdx*np.arange(array.shape[ndims-1])
             array += x_t_array
@@ -1403,6 +1405,14 @@ class Simulation:
         self._temperature_path = temperature_path
     def set_temperature_units(self, temperature_units):
         self._temperature_units = temperature_units
+        
+    def set_temperature_origin(self, temperature_origin):
+        if(temperature_origin == "center"):
+            self._temperature_origin = self._global_dimensions.copy()
+            for i in range(len(self._temperature_origin)):
+                self._temperature_origin[i] //= 2
+        else:
+            self._temperature_origin = temperature_origin
         
     def set_t_file_offset(self, offset_list):
         self._t_file_offset = offset_list
