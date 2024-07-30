@@ -701,23 +701,23 @@ def NComponent_kernel_3D(fields, T, transfer, fields_out, rng_states, params, c_
                 dpsizdy = (q24y-q13y)*dphidx + (q24-q13)*d2phidxy + (q34y+q12y)*dphidy + (q34+q12)*d2phidy2 + q44y*dphidz + q44*d2phidyz
                 dpsizdz = (q24z-q13z)*dphidx + (q24-q13)*d2phidxz + (q34z+q12z)*dphidy + (q34+q12)*d2phidyz + q44z*dphidz + q44*d2phidz2
 
-                d_term_dx = dTdx*((2.*psix3*q22 + 2.*psiy3*(q23-q14) + 2.*psiz3*(q24+q13))/mag_grad_phi2 - dphidx*(psix4+psiy4+psiz4)/mag_grad_phi4)
-                d_term_dx += T[i][j][k]*(6.*psix2*dpsixdx*q22 + 2.*psix3*q22x + 6.*psiy2*dpsiydx*(q23-q14) + 2.*psiy3*(q23x-q14x) + 6.*psiz2*dpsizdx*(q24+q13) + 2.*psiz3*(q24x+q13x))/mag_grad_phi2
-                d_term_dx -= 2.*T[i][j][k]*(2.*psix3*q22 + 2.*psiy3*(q23-q14) + 2.*psiz3*(q24+q13))*(dphidx*d2phidx2 + dphidy*d2phidxy + dphidz*d2phidxz)/mag_grad_phi4
+                d_term_dx = dTdx*((2.*psix3*q22 + 2.*psiy3*(q23+q14) + 2.*psiz3*(q24-q13))/mag_grad_phi2 - dphidx*(psix4+psiy4+psiz4)/mag_grad_phi4)
+                d_term_dx += T[i][j][k]*(6.*psix2*dpsixdx*q22 + 2.*psix3*q22x + 6.*psiy2*dpsiydx*(q23+q14) + 2.*psiy3*(q23x+q14x) + 6.*psiz2*dpsizdx*(q24-q13) + 2.*psiz3*(q24x-q13x))/mag_grad_phi2
+                d_term_dx -= 2.*T[i][j][k]*(2.*psix3*q22 + 2.*psiy3*(q23+q14) + 2.*psiz3*(q24-q13))*(dphidx*d2phidx2 + dphidy*d2phidxy + dphidz*d2phidxz)/mag_grad_phi4
                 d_term_dx -= T[i][j][k]*(d2phidx2*(psix4+psiy4+psiz4) + dphidx*(4.*psix3*dpsixdx + 4.*psiy3*dpsiydx + 4.*psiz3*dpsizdx))/mag_grad_phi4
                 d_term_dx += 4.*T[i][j][k]*dphidx*(psix4+psiy4+psiz4)*(dphidx*d2phidx2 + dphidy*d2phidxy + dphidz*d2phidxz)/mag_grad_phi6
                 d_term_dx *= (4.*y_e*ebar2)
 
-                d_term_dy = dTdy*((2.*psix3*(q23+q14) + 2.*psiy3*q33 + 2.*psiz3*(q34-q12))/mag_grad_phi2 - dphidy*(psix4+psiy4+psiz4)/mag_grad_phi4)
-                d_term_dy += T[i][j][k]*(6.*psix2*dpsixdy*(q23+q14) + 2.*psix3*(q23y+q14y) + 6.*psiy2*dpsiydy*q33 + 2.*psiy3*q33y + 6.*psiz2*dpsizdy*(q34-q12) + 2.*psiz3*(q34y-q12y))/mag_grad_phi2
-                d_term_dy -= 2.*T[i][j][k]*(2.*psix3*(q23+q14) + 2.*psiy3*q33 + 2.*psiz3*(q34-q12))*(dphidx*d2phidxy + dphidy*d2phidy2 + dphidz*d2phidyz)/mag_grad_phi4
+                d_term_dy = dTdy*((2.*psix3*(q23-q14) + 2.*psiy3*q33 + 2.*psiz3*(q34+q12))/mag_grad_phi2 - dphidy*(psix4+psiy4+psiz4)/mag_grad_phi4)
+                d_term_dy += T[i][j][k]*(6.*psix2*dpsixdy*(q23-q14) + 2.*psix3*(q23y-q14y) + 6.*psiy2*dpsiydy*q33 + 2.*psiy3*q33y + 6.*psiz2*dpsizdy*(q34+q12) + 2.*psiz3*(q34y+q12y))/mag_grad_phi2
+                d_term_dy -= 2.*T[i][j][k]*(2.*psix3*(q23-q14) + 2.*psiy3*q33 + 2.*psiz3*(q34+q12))*(dphidx*d2phidxy + dphidy*d2phidy2 + dphidz*d2phidyz)/mag_grad_phi4
                 d_term_dy -= T[i][j][k]*(d2phidy2*(psix4+psiy4+psiz4) + dphidy*(4.*psix3*dpsixdy + 4.*psiy3*dpsiydy + 4.*psiz3*dpsizdy))/mag_grad_phi4
                 d_term_dy += 4.*T[i][j][k]*dphidy*(psix4+psiy4+psiz4)*(dphidx*d2phidxy + dphidy*d2phidy2 + dphidz*d2phidyz)/mag_grad_phi6
                 d_term_dy *= (4.*y_e*ebar2)
 
-                d_term_dz = dTdz*((2.*psix3*(q24-q13) + 2.*psiy3*(q34+q12) + 2.*psiz3*q44)/mag_grad_phi2 - dphidz*(psix4+psiy4+psiz4)/mag_grad_phi4)
-                d_term_dz += T[i][j][k]*(6.*psix2*dpsixdz*(q24-q13) + 2.*psix3*(q24z-q13z) + 6.*psiy2*dpsiydz*(q34+q12) + 2.*psiy3*(q34z+q12z) + 6.*psiz2*dpsizdz*q44 + 2.*psiz3*q44z)/mag_grad_phi2
-                d_term_dz -= 2.*T[i][j][k]*(2.*psix3*(q24-q13) + 2.*psiy3*(q34+q12) + 2.*psiz3*q44)*(dphidx*d2phidxz + dphidy*d2phidyz + dphidz*d2phidz2)/mag_grad_phi4
+                d_term_dz = dTdz*((2.*psix3*(q24+q13) + 2.*psiy3*(q34-q12) + 2.*psiz3*q44)/mag_grad_phi2 - dphidz*(psix4+psiy4+psiz4)/mag_grad_phi4)
+                d_term_dz += T[i][j][k]*(6.*psix2*dpsixdz*(q24+q13) + 2.*psix3*(q24z+q13z) + 6.*psiy2*dpsiydz*(q34-q12) + 2.*psiy3*(q34z-q12z) + 6.*psiz2*dpsizdz*q44 + 2.*psiz3*q44z)/mag_grad_phi2
+                d_term_dz -= 2.*T[i][j][k]*(2.*psix3*(q24+q13) + 2.*psiy3*(q34-q12) + 2.*psiz3*q44)*(dphidx*d2phidxz + dphidy*d2phidyz + dphidz*d2phidz2)/mag_grad_phi4
                 d_term_dz -= T[i][j][k]*(d2phidz2*(psix4+psiy4+psiz4) + dphidz*(4.*psix3*dpsixdz + 4.*psiy3*dpsiydz + 4.*psiz3*dpsizdz))/mag_grad_phi4
                 d_term_dz += 4.*T[i][j][k]*dphidz*(psix4+psiy4+psiz4)*(dphidx*d2phidxz + dphidy*d2phidyz + dphidz*d2phidz2)/mag_grad_phi6
                 d_term_dz *= (4.*y_e*ebar2)
